@@ -6,18 +6,17 @@ import 'package:my_app/components/dialogBox.dart';
 import 'package:my_app/components/iconComponents.dart';
 import 'package:my_app/components/textFieldComponent.dart';
 import 'package:my_app/user_management/Home_Page.dart';
-import 'package:my_app/user_management/Service%20Providers/PhoneAuth/Login.dart';
 import 'package:my_app/user_management/forgot_password.dart';
 import 'package:my_app/user_management/signup_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class H_T_LoginPage extends StatefulWidget {
+  const H_T_LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => Login();
+  State<H_T_LoginPage> createState() => Login();
 }
 
-class Login extends State<LoginPage> {
+class Login extends State<H_T_LoginPage> {
   final _Loginformfield = GlobalKey<FormState>();
   TextEditingController emailController = TextEditingController();
   TextEditingController passController = TextEditingController();
@@ -188,22 +187,6 @@ class Login extends State<LoginPage> {
                       ))
                 ]),
               ),
-              Padding(
-                  padding: const EdgeInsets.only(left: 80),
-                  child: TextButton(
-                      onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginSP()));
-                      },
-                      child: const Text(
-                        'Login as a Service Provider',
-                        style: TextStyle(
-                            color: Color.fromRGBO(244, 241, 222, 1.0),
-                            fontSize: 18),
-                      ))),
             ],
           ),
         ),

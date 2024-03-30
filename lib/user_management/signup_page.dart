@@ -1,9 +1,9 @@
-// ignore_for_file: unnecessary_const, prefer_const_constructors
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/components/dialogBox.dart';
+import 'package:my_app/components/iconComponents.dart';
 import 'package:my_app/components/textFieldComponent.dart';
+import 'package:my_app/user_management/Service%20Providers/PhoneAuth/PhoneSignIn.dart';
 import 'package:my_app/user_management/login_page.dart';
 import 'package:my_app/user_management/otp_screen.dart';
 
@@ -22,6 +22,8 @@ class SignUp extends State<SignUpPage> {
   TextEditingController passwordController = TextEditingController();
   TextEditingController passwordAgainController = TextEditingController();
   TextEditingController numberController = TextEditingController();
+  bool _obscureText = true;
+  bool _obscureText1 = true;
 
   void createAccount(BuildContext context) async {
     String name = nameController.text.trim();
@@ -30,9 +32,11 @@ class SignUp extends State<SignUpPage> {
     String password = passwordController.text.trim();
     String cpassword = passwordAgainController.text.trim();
     String number = numberController.text.trim();
+    RegExp numExp = RegExp(r'\d');
+    RegExp alphExp = RegExp(r'[a-zA-Z]');
 
     void send_OTP() async {
-      bool verified = false;
+      // bool verified = false;
       String org_num = number.substring(1);
       String phone = "+92$org_num";
       FirebaseAuth _auth = FirebaseAuth.instance;
@@ -68,6 +72,8 @@ class SignUp extends State<SignUpPage> {
         cpassword == "" ||
         number == "") {
       dialogue_box(context, "Please fill out all the fields!!");
+    } else if (numExp.hasMatch(name)) {
+      dialogue_box(context, "Name cannot contain numbers");
     } else if (!RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).*$')
         .hasMatch(password)) {
       dialogue_box(context,
@@ -78,6 +84,8 @@ class SignUp extends State<SignUpPage> {
       dialogue_box(context, "Enter a valid email address");
     } else if (number[0] != "0" || number[1] != "3" || number.length != 11) {
       dialogue_box(context, "Please enter a valid mobile number!");
+    } else if (alphExp.hasMatch(number)) {
+      dialogue_box(context, 'Number cannot contain alphabets');
     } else {
       send_OTP();
     }
@@ -91,34 +99,33 @@ class SignUp extends State<SignUpPage> {
         title: const Text(
           'Sign Up',
           style: TextStyle(
-            color: Color.fromARGB(187, 255, 255, 255),
+            color: Color.fromRGBO(244, 241, 222, 1.0),
             fontSize: 30,
           ),
         ),
-        // ignore: prefer_const_constructors
-        backgroundColor: Color.fromARGB(117, 37, 36, 43),
+        backgroundColor: const Color.fromRGBO(67, 99, 114, 1.0),
       ),
-      backgroundColor: const Color(0xFF25242B),
+      backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
       body: Center(
         child: Form(
           key: _Signupformfield,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: ListView(
             children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-                child: Text(
-                  "TrekMates",
-                  style: TextStyle(color: Colors.white, fontSize: 25),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                child: Center(
+                  child: Text(
+                    "TrekMates",
+                    style: TextStyle(color: Colors.white, fontSize: 25),
+                  ),
                 ),
               ),
               Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: TextField(
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color.fromRGBO(244, 241, 222, 1.0),
                     ),
                     controller: nameController,
                     decoration: textFieldDecoration(
@@ -126,18 +133,20 @@ class SignUp extends State<SignUpPage> {
                   )),
               Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: TextField(
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(
+                        color: Color.fromRGBO(244, 241, 222, 1.0)),
                     controller: usernameController,
                     decoration: textFieldDecoration(
                         "./assets/icons/person_icon.png", "Username"),
                   )),
               Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: TextFormField(
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(
+                        color: Color.fromRGBO(244, 241, 222, 1.0)),
                     keyboardType: TextInputType.emailAddress,
                     controller: emailController,
                     decoration: textFieldDecoration(
@@ -145,9 +154,10 @@ class SignUp extends State<SignUpPage> {
                   )),
               Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: TextFormField(
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(
+                        color: Color.fromRGBO(244, 241, 222, 1.0)),
                     keyboardType: TextInputType.number,
                     controller: numberController,
                     decoration: textFieldDecoration(
@@ -155,55 +165,112 @@ class SignUp extends State<SignUpPage> {
                   )),
               Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: TextField(
-                    style: const TextStyle(color: Colors.white),
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: textFieldDecoration(
-                        "./assets/icons/pwd_icon.png", "Password"),
-                  )),
-              // ignore: prefer_const_constructors
+                      style: const TextStyle(
+                          color: Color.fromRGBO(244, 241, 222, 1.0)),
+                      controller: passwordController,
+                      obscureText: _obscureText,
+                      decoration: InputDecoration(
+                          // prefixIcon: Icon(Icons),
+                          prefixIcon: prefixIcon("./assets/icons/pwd_icon.png"),
+                          suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _obscureText = !_obscureText;
+                                });
+                              },
+                              icon: Icon(_obscureText
+                                  ? Icons.visibility
+                                  : Icons.visibility_off)),
+                          disabledBorder: const OutlineInputBorder(
+                              borderSide: BorderSide.none,
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(10))),
+                          enabledBorder: const OutlineInputBorder(
+                              borderSide: BorderSide.none,
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(10))),
+                          labelText: 'password',
+                          labelStyle: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                          ),
+                          border: const OutlineInputBorder(),
+                          filled: true,
+                          fillColor: const Color.fromRGBO(67, 99, 114, 1.0)))),
               Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: TextField(
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(
+                        color: Color.fromRGBO(244, 241, 222, 1.0)),
                     controller: passwordAgainController,
-                    obscureText: true,
-                    decoration: textFieldDecoration(
-                        "./assets/icons/pwd_icon.png", "Password Again"),
+                    obscureText: _obscureText1,
+                    decoration: InputDecoration(
+                        // prefixIcon: Icon(Icons),
+                        prefixIcon: prefixIcon("./assets/icons/pwd_icon.png"),
+                        suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _obscureText1 = !_obscureText1;
+                              });
+                            },
+                            icon: Icon(_obscureText1
+                                ? Icons.visibility
+                                : Icons.visibility_off)),
+                        disabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10))),
+                        enabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10))),
+                        labelText: 'password',
+                        labelStyle: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                        border: const OutlineInputBorder(),
+                        filled: true,
+                        fillColor: const Color.fromRGBO(67, 99, 114, 1.0)),
                   )),
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                child: ElevatedButton(
-                  onPressed: () {
-                    createAccount(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(32, 171, 125, 1),
-                    fixedSize: const Size(300, 50),
-                  ),
-                  child: const Text(
-                    "Sign Up",
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.white,
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                child: SizedBox(
+                  width:100,
+                  height:50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      createAccount(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(238, 30, 30, 1),
+                      fixedSize: const Size(100, 50),
+                    ),
+                    child: const Text(
+                      "Sign Up",
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Color.fromRGBO(244, 241, 222, 1.0),
+                      ),
                     ),
                   ),
                 ),
               ),
               Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 0),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
+                      const Text(
                         'Already have an account?',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Color.fromRGBO(244, 241, 222, 1.0),
                           fontSize: 14,
                         ),
                       ),
@@ -217,12 +284,32 @@ class SignUp extends State<SignUpPage> {
                                         builder: (context) =>
                                             const LoginPage()))
                               },
-                          child: Text(
+                          child: const Text(
                             'LOGIN',
-                            style: TextStyle(color: Colors.white, fontSize: 14),
+                            style: TextStyle(
+                                color: Color.fromRGBO(244, 241, 222, 1.0),
+                                fontSize: 14),
                           ))
                     ],
                   )),
+              Padding(
+                  padding: const EdgeInsets.only(left: 80),
+                  child: TextButton(
+                      onPressed: () {
+                        Navigator.popUntil(context, (route) => route.isFirst);
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const PhoneSignIn(
+                                      isVerified: false,
+                                    )));
+                      },
+                      child: const Text(
+                        'Signup as a Service Provider',
+                        style: TextStyle(
+                            color: Color.fromRGBO(244, 241, 222, 1.0),
+                            fontSize: 18),
+                      ))),
             ],
           ),
         ),

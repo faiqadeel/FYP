@@ -57,13 +57,13 @@ class ForgotPassword extends State<ForgotPasswordScreen> {
         title: const Text(
           'Forgot Password',
           style: TextStyle(
-            color: Colors.white,
+            color: Color.fromRGBO(244, 241, 222, 1.0),
           ),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF25242B),
+        backgroundColor: const Color.fromRGBO(67, 99, 114, 1.0),
       ),
-      backgroundColor: const Color(0xFF25242B),
+      backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -71,11 +71,11 @@ class ForgotPassword extends State<ForgotPasswordScreen> {
           children: [
             Padding(
               padding:
-                  EdgeInsets.only(right: 40, left: 40, top: 40, bottom: 10),
+                  EdgeInsets.only(right: 20, left: 20, top: 40, bottom: 10),
               child: TextField(
                 controller: emailController,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color.fromRGBO(244, 241, 222, 1.0),
                 ),
                 decoration: textFieldDecoration(
                     './assets/icons/mail_icon.png', "Enter Registered Email"),
@@ -83,11 +83,11 @@ class ForgotPassword extends State<ForgotPasswordScreen> {
             ),
             Padding(
               padding:
-                  EdgeInsets.only(right: 40, left: 40, top: 10, bottom: 10),
+                  EdgeInsets.only(right: 20, left: 20, top: 10, bottom: 10),
               child: TextField(
                 controller: phoneController,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color.fromRGBO(244, 241, 222, 1.0),
                 ),
                 decoration: textFieldDecoration(
                     './assets/icons/phone.png', "Phone Number"),
@@ -99,13 +99,13 @@ class ForgotPassword extends State<ForgotPasswordScreen> {
               child: ElevatedButton(
                 onPressed: () => sendOtp(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(53, 52, 59, 1),
+                  backgroundColor: const Color.fromRGBO(238, 30, 30, 1),
                   fixedSize: const Size(250, 50),
                 ),
                 child: const Text(
                   'Get OTP',
                   style: TextStyle(
-                      color: Color.fromRGBO(209, 209, 209, 1), fontSize: 20),
+                      color: Color.fromRGBO(244, 241, 222, 1.0), fontSize: 20),
                 ),
               ),
             ),

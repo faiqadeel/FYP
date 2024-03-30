@@ -32,44 +32,45 @@ class _OTP_Screen extends State<OTP_Screen> {
 
   void verify_OTP() async {
     String OTP = otp_num.text.trim();
+
     PhoneAuthCredential credential = PhoneAuthProvider.credential(
         verificationId: widget.verificatId, smsCode: OTP);
     try {
-      if (credential != null) {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: widget.email, password: widget.password);
-        UserCredential userCredential = await FirebaseAuth.instance
-            .signInWithEmailAndPassword(
-                email: widget.email, password: widget.password);
-        await userCredential.user?.linkWithCredential(credential);
-        showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('SUCCESS'),
-                content: const Text(
-                    "Account Created Successfully\nProceed to login"),
-                actions: [
-                  TextButton(
-                      onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginPage()));
-                      },
-                      child: const Text('OK'))
-                ],
-              );
-            });
-        Map<String, dynamic> userData = {
-          "name": widget.name,
-          "email": widget.email,
-          "mobile number": widget.phone,
-          "friends": []
-        };
-        FirebaseFirestore.instance.collection("tourists").add(userData);
-      }
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: widget.email, password: widget.password);
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+              email: widget.email, password: widget.password);
+      await userCredential.user?.linkWithCredential(credential);
+      showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('SUCCESS'),
+              content:
+                  const Text("Account Created Successfully\nProceed to login"),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      Navigator.popUntil(context, (route) => route.isFirst);
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const LoginPage()));
+                    },
+                    child: const Text('OK'))
+              ],
+            );
+          });
+      Map<String, dynamic> userData = {
+        "name": widget.name,
+        "email": widget.email,
+        "mobile number": widget.phone,
+        "friends": [],
+        "FriendRequests": [],
+        "SentRequests": []
+      };
+      FirebaseFirestore.instance.collection("tourists").add(userData);
     } on FirebaseAuthException catch (e) {
       try {
         User? user = FirebaseAuth.instance.currentUser;
@@ -94,7 +95,8 @@ class _OTP_Screen extends State<OTP_Screen> {
               "or is already linked to a Firebase User.");
           break;
         default:
-          dialogue_box(context, 'hello');
+          dialogue_box(
+              context, 'An error occured while processing your request');
       }
     }
   }
@@ -106,14 +108,14 @@ class _OTP_Screen extends State<OTP_Screen> {
         title: const Text(
           'Verify OTP',
           style: TextStyle(
-            color: Color.fromARGB(187, 255, 255, 255),
+            color: Color.fromRGBO(244, 241, 222, 1.0),
             fontSize: 30,
           ),
         ),
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(117, 37, 36, 43),
+        backgroundColor: const Color.fromRGBO(67, 99, 114, 1.0),
       ),
-      backgroundColor: const Color(0xFF25242B),
+      backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -121,11 +123,11 @@ class _OTP_Screen extends State<OTP_Screen> {
           children: [
             Padding(
               padding: const EdgeInsets.only(
-                  top: 40, left: 30, right: 30, bottom: 10),
+                  top: 40, left: 20, right: 20, bottom: 10),
               child: TextField(
                 maxLength: 6,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color.fromRGBO(244, 241, 222, 1.0),
                 ),
                 controller: otp_num,
                 decoration: textFieldDecoration(
@@ -140,7 +142,7 @@ class _OTP_Screen extends State<OTP_Screen> {
                     verify_OTP();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(53, 52, 59, 1),
+                    backgroundColor: const Color.fromRGBO(238, 30, 30, 1),
                     fixedSize: const Size(300, 50),
                   ),
                   child: const Text(

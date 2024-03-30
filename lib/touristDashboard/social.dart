@@ -1,136 +1,121 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:my_app/components/dialogBox.dart';
+import 'package:my_app/components/textFieldComponent.dart';
 
-class Social extends StatelessWidget {
+import 'CreatePostScreen.dart';
+
+class Social extends StatefulWidget {
+  final String name;
+  const Social({super.key, required this.name});
+  @override
+  _SocialState createState() => _SocialState();
+}
+
+class _SocialState extends State<Social> {
+  String ProfileUrl = '';
+  Future<List<Post>> fetchPosts() async {
+    QuerySnapshot snapshot =
+        await FirebaseFirestore.instance.collection('Posts').get();
+    return snapshot.docs.map((doc) => Post.fromFirestore(doc)).toList();
+  }
+
+  void fetchProfileURL(String name) async {
+    try {
+      QuerySnapshot Doc = await FirebaseFirestore.instance
+          .collection("tourists")
+          .where("name", isEqualTo: name)
+          .get();
+      DocumentSnapshot myDoc = Doc.docs.first;
+      setState(() {
+        ProfileUrl = myDoc['Profile URL'];
+      });
+    } catch (e) {
+      dialogue_box(context, e.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: Text('Activity Feed', style: AppBarTextStyle()),
         centerTitle: true,
-        title: const Text('Feed'),
       ),
-      body: GalleryList(),
+      body: FutureBuilder<List<Post>>(
+        future: fetchPosts(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData)
+            return Center(child: CircularProgressIndicator());
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              Post post = snapshot.data![index];
+              fetchProfileURL(post.postedBy);
+              return Card(
+                margin: EdgeInsets.all(8),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: CircleAvatar(
+                          backgroundImage: NetworkImage(ProfileUrl == ""
+                              ? "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                              : ProfileUrl)), // Assuming the first URL is the user's profile picture
+                      title: Text(post.postedBy),
+                      subtitle: Text('${post.Description}'),
+                    ),
+                    Image.network(post.mediaUrl), // Post media
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.favorite_border),
+                          onPressed: () {},
+                        ),
+                        Text('${post.likes}'),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Add your logic for handling the add button press
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => CreatePost(name: widget.name)));
+          // Implement adding new post functionality
         },
-        child: const Icon(Icons.add),
+        child: Icon(Icons.add),
       ),
     );
   }
 }
 
-class GalleryList extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: FirebaseFirestore.instance.collection('images').snapshots(),
-      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
+class Post {
+  final String mediaUrl; // Could be a photo or video URL
+  final String postedBy;
+  final int likes;
+  final String Description;
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
-        }
+  Post({
+    required this.mediaUrl,
+    required this.postedBy,
+    required this.likes,
+    required this.Description,
+  });
 
-        final List<DocumentSnapshot> documents = snapshot.data!.docs;
-
-        return ListView.builder(
-          itemCount: documents.length,
-          itemBuilder: (context, index) {
-            return GalleryItem(
-              imageUrl: documents[index]['imageUrl'],
-              documentId: documents[index].id,
-              uploadedBy: documents[index]["Uploaded By"],
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class GalleryItem extends StatelessWidget {
-  final String imageUrl;
-  final String documentId;
-  final String uploadedBy;
-
-  GalleryItem(
-      {required this.imageUrl,
-      required this.documentId,
-      required this.uploadedBy});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: const EdgeInsets.symmetric(
-                vertical: 8.0), // Add vertical margin
-            child: Text(
-              uploadedBy, // Add your title text here
-              style:
-                  const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(bottom: 8.0), // Add bottom margin
-            child: Stack(
-              children: [
-                CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  placeholder: (context, url) =>
-                      const CircularProgressIndicator(),
-                  errorWidget: (context, url, error) => const Icon(Icons.error),
-                ),
-                Positioned(
-                  bottom: 8.0,
-                  right: 8.0,
-                  child: LikeButton(documentId: documentId),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class LikeButton extends StatefulWidget {
-  final String documentId;
-
-  LikeButton({required this.documentId});
-
-  @override
-  _LikeButtonState createState() => _LikeButtonState();
-}
-
-class _LikeButtonState extends State<LikeButton> {
-  bool isLiked = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        isLiked ? Icons.favorite : Icons.favorite_border,
-        color: isLiked ? Colors.red : Colors.grey,
-      ),
-      onPressed: () {
-        // Add your logic for handling the like button press and updating Firebase
-        setState(() {
-          isLiked = !isLiked;
-        });
-      },
+  factory Post.fromFirestore(DocumentSnapshot doc) {
+    Map data = doc.data() as Map;
+    return Post(
+      mediaUrl: data['Media URL'] ?? '',
+      postedBy: data['Posted By'] ?? '',
+      likes: int.parse(data['likes'].toString()) ?? 0,
+      Description: data["Description"] ?? "",
     );
   }
 }

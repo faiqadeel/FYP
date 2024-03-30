@@ -19,13 +19,13 @@ class StartPage extends State<LandingPage> {
         title: const Text(
           'Welcome Page',
           style: TextStyle(
-            color: Colors.white,
+            color: Color.fromRGBO(209, 209, 209, 1),
             fontSize: 30,
           ),
         ),
-        backgroundColor: Color(0xFF25242B),
+        backgroundColor: const Color.fromRGBO(40, 114, 113, 1.0),
       ),
-      backgroundColor: const Color(0xFF25242B),
+      backgroundColor: const Color.fromRGBO(42, 157, 143, 1.0),
       body: Center(
         child: Form(
           key: _form,
@@ -40,7 +40,7 @@ class StartPage extends State<LandingPage> {
                     context.push("/login");
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(53, 52, 59, 1),
+                    backgroundColor: const Color.fromRGBO(38, 70, 83, 1.0),
                     fixedSize: const Size(300, 50),
                   ),
                   child: const Text(
@@ -56,7 +56,7 @@ class StartPage extends State<LandingPage> {
                 child: ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(53, 52, 59, 1),
+                    backgroundColor: const Color.fromRGBO(38, 70, 83, 1.0),
                     fixedSize: const Size(300, 50),
                   ),
                   child: const Text(

@@ -1,47 +1,74 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/components/dialogBox.dart';
 import 'package:my_app/components/iconComponents.dart';
 import 'package:my_app/components/textFieldComponent.dart';
-import 'package:my_app/user_management/Home_Page.dart';
-import 'package:my_app/user_management/Service%20Providers/PhoneAuth/Login.dart';
+import 'package:my_app/user_management/Service%20Providers/Screens/HotelOwner.dart';
+import 'package:my_app/user_management/Service%20Providers/Screens/TourGuide.dart';
+import 'package:my_app/user_management/Service%20Providers/Screens/TransportOwner.dart';
 import 'package:my_app/user_management/forgot_password.dart';
-import 'package:my_app/user_management/signup_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class LoginSP extends StatefulWidget {
+  const LoginSP({super.key});
 
   @override
-  State<LoginPage> createState() => Login();
+  State<LoginSP> createState() => Login();
 }
 
-class Login extends State<LoginPage> {
+class Login extends State<LoginSP> {
   final _Loginformfield = GlobalKey<FormState>();
-  TextEditingController emailController = TextEditingController();
+  TextEditingController phoneNumber = TextEditingController();
   TextEditingController passController = TextEditingController();
   bool _obscureText = true;
 
   void process_login() async {
-    String email = emailController.text.trim();
+    String phone = phoneNumber.text.trim();
+    String org_num = phone.substring(1);
+    String num = "+92$org_num";
     String password = passController.text.trim();
 
-    if (email == "" || password == "") {
+    if (phone == "" || password == "") {
       dialogue_box(context, 'Please fill out all the fields!');
     } else {
       try {
-        UserCredential userCredential = await FirebaseAuth.instance
-            .signInWithEmailAndPassword(email: email, password: password);
-        if (userCredential.user != null) {
-          Navigator.popUntil(context, (route) => route.isFirst);
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => HomeScreen(email: email)));
+        QuerySnapshot serviceProvier = await FirebaseFirestore.instance
+            .collection("Service Providers")
+            .where('Phone Number', isEqualTo: num)
+            .get();
+        if (serviceProvier.docs.isNotEmpty) {
+          DocumentSnapshot sp = serviceProvier.docs.first;
+          String servicetype =
+              (sp.data() as Map<String, dynamic>)['Service Type'];
+          if (password == (sp.data() as Map<String, dynamic>)['Password']) {
+            if (servicetype == "HotelOwner") {
+              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => HotelOwner(
+                            provider_id: num,
+                          )));
+            } else if (servicetype == "TransportOwner") {
+              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => TransportOwner(provider_id: num)));
+            } else {
+              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => TourGuide(provider_id: num)));
+            }
+          } else {
+            dialogue_box(context, "Incorrect Password");
+          }
         }
-      } on FirebaseAuthException catch (ex) {
-        dialogue_box(context, ex.code.toString());
+      } catch (ex) {
+        dialogue_box(context, ex.toString());
       }
     }
   }
@@ -82,10 +109,10 @@ class Login extends State<LoginPage> {
                     style: const TextStyle(
                       color: Colors.white,
                     ),
-                    controller: emailController,
+                    controller: phoneNumber,
                     keyboardType: TextInputType.text,
                     decoration: textFieldDecoration(
-                        './assets/icons/mail_icon.png', 'Email'),
+                        './assets/icons/phone.png', 'Enter your Phone Number'),
                   )),
               Padding(
                   padding:
@@ -163,47 +190,6 @@ class Login extends State<LoginPage> {
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 80),
-                child: Row(children: [
-                  const Text(
-                    'New Here?',
-                    style: TextStyle(
-                        color: Color.fromRGBO(244, 241, 222, 1.0),
-                        fontSize: 18),
-                  ),
-                  TextButton(
-                      onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const SignUpPage()));
-                      },
-                      child: const Text(
-                        'Sign Up Now',
-                        style: TextStyle(
-                            color: Color.fromRGBO(244, 241, 222, 1.0),
-                            fontSize: 18),
-                      ))
-                ]),
-              ),
-              Padding(
-                  padding: const EdgeInsets.only(left: 80),
-                  child: TextButton(
-                      onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginSP()));
-                      },
-                      child: const Text(
-                        'Login as a Service Provider',
-                        style: TextStyle(
-                            color: Color.fromRGBO(244, 241, 222, 1.0),
-                            fontSize: 18),
-                      ))),
             ],
           ),
         ),
