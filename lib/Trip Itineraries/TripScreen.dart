@@ -179,6 +179,7 @@ class _TripScreenState extends State<TripScreen> {
         centerTitle: true,
         title: Text('Trip Information', style: AppBarTextStyle()),
       ),
+      resizeToAvoidBottomInset: true,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: tripInfo.isEmpty
@@ -299,9 +300,9 @@ class _TripScreenState extends State<TripScreen> {
                         stops = [];
                         partners = [];
                         if (status) {
-                          dialogue_box(context, 'Trip Info updated!!');
+                          success_dialogue_box(context, 'Trip Info updated!!');
                         } else {
-                          dialogue_box(context,
+                          error_dialogue_box(context,
                               'We are facing some issues, Kindly try again later');
                         }
                       },

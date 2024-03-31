@@ -62,7 +62,7 @@ class _TransportOwnerState extends State<TransportOwner> {
                     Navigator.of(context).pop(); // Close the dialog
                     await _uploadImage(name, seats, File(pickedImage.path));
                   } else {
-                    dialogue_box(
+                    error_dialogue_box(
                         context, "An error occured while uploading the image");
                   }
                 },

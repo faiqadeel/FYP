@@ -29,12 +29,12 @@ class _OTP_Screen extends State<Password_Reset> {
     String pass = password.text.trim();
     String newPass = newPassword.text.trim();
     if (pass == "" || newPass == "") {
-      dialogue_box(context, "Please fill out all the fileds");
+      error_dialogue_box(context, "Please fill out all the fileds");
     } else if (pass != newPass) {
-      dialogue_box(context, "Passwords do not match");
+      error_dialogue_box(context, "Passwords do not match");
     } else if (!RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).*$')
         .hasMatch(pass)) {
-      dialogue_box(context,
+      error_dialogue_box(context,
           "Password must contain  at least one uppercase letter, one lowercase letter, one number, and one special character!");
     } else {
       try {
@@ -57,7 +57,7 @@ class _OTP_Screen extends State<Password_Reset> {
         Navigator.pushReplacement(context,
             MaterialPageRoute(builder: (context) => const LoginPage()));
       } on FirebaseAuthException catch (e) {
-        dialogue_box(context, e.code.toString());
+        error_dialogue_box(context, e.code.toString());
       }
     }
   }
@@ -89,20 +89,21 @@ class _OTP_Screen extends State<Password_Reset> {
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case "provider-already-linked":
-          dialogue_box(
+          error_dialogue_box(
               context, "The provider has already been linked to the user.");
           break;
         case "invalid-credential":
-          dialogue_box(context, "The provider's credential is not valid.");
+          error_dialogue_box(
+              context, "The provider's credential is not valid.");
           break;
         case "credential-already-in-use":
-          dialogue_box(
+          error_dialogue_box(
               context,
               "The account corresponding to the credential already exists, "
               "or is already linked to a Firebase User.");
           break;
         default:
-          dialogue_box(context, e.code.toString());
+          error_dialogue_box(context, e.code.toString());
       }
     }
   }
@@ -122,6 +123,7 @@ class _OTP_Screen extends State<Password_Reset> {
         backgroundColor: const Color.fromARGB(117, 37, 36, 43),
       ),
       backgroundColor: const Color(0xFF25242B),
+      resizeToAvoidBottomInset: true,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,

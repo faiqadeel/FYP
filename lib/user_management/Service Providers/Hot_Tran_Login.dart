@@ -27,7 +27,7 @@ class Login extends State<H_T_LoginPage> {
     String password = passController.text.trim();
 
     if (email == "" || password == "") {
-      dialogue_box(context, 'Please fill out all the fields!');
+      error_dialogue_box(context, 'Please fill out all the fields!');
     } else {
       try {
         UserCredential userCredential = await FirebaseAuth.instance
@@ -40,7 +40,7 @@ class Login extends State<H_T_LoginPage> {
                   builder: (context) => HomeScreen(email: email)));
         }
       } on FirebaseAuthException catch (ex) {
-        dialogue_box(context, ex.code.toString());
+        error_dialogue_box(context, ex.code.toString());
       }
     }
   }

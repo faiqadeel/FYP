@@ -16,6 +16,7 @@ class _PasswordSetupState extends State<PasswordSetup> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Center(
         child: Column(
           children: [

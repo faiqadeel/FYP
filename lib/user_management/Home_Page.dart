@@ -1,26 +1,27 @@
 // ignore_for_file: use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as parser;
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:my_app/Service%20Providers/local_guide.dart';
-import 'package:my_app/Service%20Providers/transport_page.dart';
 import 'package:my_app/Trip%20Itineraries/NewTrip.dart';
 import 'package:my_app/Trip%20Itineraries/TripScreen.dart';
 import 'package:my_app/Trip%20Itineraries/ViewTrip.dart';
 import 'package:my_app/components/Colors.dart';
 import 'package:my_app/components/dialogBox.dart';
+import 'package:my_app/touristDashboard/Service%20Provider%20Screens/local_guide.dart';
+import 'package:my_app/touristDashboard/Service%20Provider%20Screens/transport_page.dart';
 import 'package:my_app/touristDashboard/friends.dart';
 import 'package:my_app/touristDashboard/social.dart';
 import 'package:my_app/user_management/login_page.dart';
 
-import '../Service Providers/hotels_page.dart';
 import '../components/textFieldComponent.dart';
+import '../touristDashboard/Service Provider Screens/hotels_page.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
@@ -31,11 +32,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _Home extends State<HomeScreen> {
+  List<String> popPlaces = [];
+  List<String> placeURLs = [];
   bool newTrip = false;
   int _currentIndex = 0;
   Uint8List? _image;
   String name = '';
   String email = '';
+  String profileURL = '';
   List<dynamic>? friends;
   bool editName = false;
   String current = 'home';
@@ -61,9 +65,45 @@ class _Home extends State<HomeScreen> {
         return response.bodyBytes;
       }
     } catch (e) {
-      dialogue_box(context, "Error Fetching image");
+      error_dialogue_box(context, "Error Fetching image");
     }
     throw Null;
+  }
+
+  Future<List<String>> getWebsiteData() async {
+    print("inside");
+    final url = Uri.parse(
+        "https://www.thebrokebackpacker.com/beautiful-places-in-pakistan/");
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      dom.Document html = parser.parse(response.body);
+
+      final places = html
+          .querySelectorAll(
+              'h2.wp-block-heading.has-text-align-center') // Corrected
+          .map((element) =>
+              element.text.trim()) // Use text for just the text content
+          .toList();
+
+      final imageURLs = html
+          .querySelectorAll(
+              "#content > article > div > div > div.col-12.order-2.offset-md-1.col-md-10.offset-lg-0.col-lg-8.order-lg-1 > div > article > div:nth-child(48) > figure > img") // Corrected
+          .map((e) =>
+              e.attributes['src'] ??
+              "") // Check for null and provide a default value
+          .toList();
+
+      // Assuming this is a Flutter Stateful Widget method
+      setState(() {
+        this.popPlaces = places;
+        this.placeURLs = imageURLs;
+      });
+
+      return imageURLs;
+    } else {
+      throw Exception('Failed to load website data');
+    }
   }
 
   Future<String> getUserData() async {
@@ -75,7 +115,7 @@ class _Home extends State<HomeScreen> {
     setState(() {
       name = myDoc['name'];
       mobileNumber = myDoc['mobile number'];
-      nameController.text = name;
+      profileURL = myDoc['Profile URL'];
     });
     return myDoc['name'];
   }
@@ -86,6 +126,7 @@ class _Home extends State<HomeScreen> {
     getUserData();
     setState(() {
       email = widget.email;
+      nameController.text = name;
     });
   }
 
@@ -97,12 +138,15 @@ class _Home extends State<HomeScreen> {
       for (var doc in querySnapshot.docs) {
         Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
         if (data != null) {
-          trips.add({
-            'pictureUrl': data[
-                'Picture URL'], // Assuming this is the field name for the picture URL
-            'tripName': data['Trip Name'],
-            'createdBy': data['Created By'],
-          });
+          var partners = data['Trip Partners'];
+          if (name == data['Created By'] || partners.contains(name)) {
+            trips.add({
+              'pictureUrl': data[
+                  'Picture URL'], // Assuming this is the field name for the picture URL
+              'tripName': data['Trip Name'],
+              'createdBy': data['Created By'],
+            });
+          }
         }
       }
     } catch (e) {
@@ -112,45 +156,44 @@ class _Home extends State<HomeScreen> {
   }
 
   void updateName(String updatedName) async {
-    try {
-      CollectionReference myCollection =
-          await FirebaseFirestore.instance.collection('tourists');
-      QuerySnapshot docs =
-          await myCollection.where("name", isEqualTo: name).get();
-      DocumentReference docRef = myCollection.doc(docs.docs.first.id);
-      await docRef.update({'name': updatedName});
-      // ignore: use_build_context_synchronously
-      showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('SUCCESS'),
-              content: const Text("Name Updated Successfully"),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('OK'))
-              ],
-            );
-          });
-    } catch (e) {
-      dialogue_box(context, "An error occured while updating the name");
+    if (name != updatedName) {
+      try {
+        CollectionReference myCollection =
+            await FirebaseFirestore.instance.collection('tourists');
+        QuerySnapshot docs =
+            await myCollection.where("name", isEqualTo: name).get();
+        DocumentReference docRef = myCollection.doc(docs.docs.first.id);
+        await docRef.update({'name': updatedName});
+        // ignore: use_build_context_synchronously
+        showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('SUCCESS'),
+                content: const Text("Name Updated Successfully"),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('OK'))
+                ],
+              );
+            });
+      } catch (e) {
+        error_dialogue_box(context, "An error occured while updating the name");
+      }
     }
   }
 
-  File? profilePic;
   void uploadPic(XFile image) async {
     try {
       Uint8List fileBytes = await image.readAsBytes();
-      File file = File.fromRawPath(fileBytes);
       Reference ref =
           FirebaseStorage.instance.ref("Profile_Pics").child("${widget.email}");
-      TaskSnapshot task = await ref.putFile(file);
+      TaskSnapshot task = await ref.putData(fileBytes);
       String downloadurl = await task.ref.getDownloadURL();
       print(downloadurl);
     } catch (e) {
-      dialogue_box(context, e.toString());
-      print(e.toString());
+      error_dialogue_box(context, e.toString());
     }
 
     //   UploadTask uploadTask = FirebaseStorage.instance
@@ -194,6 +237,7 @@ class _Home extends State<HomeScreen> {
     // ignore: prefer_const_constructors
     return Scaffold(
       backgroundColor: backgroundColor(),
+      resizeToAvoidBottomInset: true,
       body: FutureBuilder<String>(
           future: getUserData(),
           builder: (context, snapshot) {
@@ -242,27 +286,42 @@ class _Home extends State<HomeScreen> {
                                     ),
                                     Stack(
                                       children: [
-                                        _image != null
+                                        profileURL != ""
                                             ? CircleAvatar(
                                                 radius: 35,
                                                 backgroundImage:
-                                                    MemoryImage(_image!),
+                                                    NetworkImage(profileURL),
                                               )
                                             : const CircleAvatar(
                                                 radius: 35,
                                                 backgroundImage: NetworkImage(
                                                     'https://static.vecteezy.com/system/resources/thumbnails/005/544/718/small/profile-icon-design-free-vector.jpg'),
                                               ),
-                                        Positioned(
-                                          bottom: -12,
-                                          left: 35,
-                                          child: IconButton(
-                                            color: Colors.black,
-                                            icon: const Icon(
-                                                Icons.add_a_photo_rounded),
-                                            onPressed: uploadImage,
-                                          ),
-                                        ),
+                                        profileURL != ''
+                                            ? const Text('')
+                                            : Positioned(
+                                                bottom: -12,
+                                                left: 35,
+                                                child: Material(
+                                                  color: Colors
+                                                      .transparent, // Keep the Material widget transparent
+                                                  child: InkWell(
+                                                    onTap: uploadImage,
+                                                    child: Container(
+                                                      width:
+                                                          48, // Increase the width for a larger touch area
+                                                      height:
+                                                          48, // Increase the height for a larger touch area
+                                                      alignment:
+                                                          Alignment.center,
+                                                      child: const Icon(
+                                                          Icons
+                                                              .add_a_photo_rounded,
+                                                          size: 24.0),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
                                       ],
                                     ),
                                   ],
@@ -400,26 +459,36 @@ class _Home extends State<HomeScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(
-                              height: 150,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: imagePaths.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      image: DecorationImage(
-                                        image: AssetImage(imagePaths[index]),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    width: 250.0, // Adjust the width as needed
-                                    margin: const EdgeInsets.all(8.0),
-                                  );
-                                },
-                              ),
-                            ),
+                            // FutureBuilder<List<String>>(
+                            //     future: getWebsiteData(),
+                            //     builder: (context, snapshot) {
+                            //       return SizedBox(
+                            //         height: 150,
+                            //         child: ListView.builder(
+                            //           scrollDirection: Axis.horizontal,
+                            //           itemCount: popPlaces.length,
+                            //           itemBuilder:
+                            //               (BuildContext context, int index) {
+                            //             final names = popPlaces[index];
+                            //             final url = placeURLs[index];
+                            //             return Container(
+                            //               decoration: BoxDecoration(
+                            //                 borderRadius:
+                            //                     BorderRadius.circular(10.0),
+                            //                 // image: DecorationImage(
+                            //                 //   image: NetworkImage(url),
+                            //                 //   fit: BoxFit.cover,
+                            //                 // ),
+                            //               ),
+                            //               child: Center(child: Text(names)),
+                            //               width:
+                            //                   250.0, // Adjust the width as needed
+                            //               margin: const EdgeInsets.all(8.0),
+                            //             );
+                            //           },
+                            //         ),
+                            //       );
+                            //     }),
                           ],
                         ),
                       ),
@@ -531,8 +600,8 @@ class _Home extends State<HomeScreen> {
                                             button1(), // Button text color
                                       ),
                                       child: trip['createdBy'] == name
-                                          ? Text("Edit Trip")
-                                          : Text("View Trip"),
+                                          ? const Text("Edit Trip")
+                                          : const Text("View Trip"),
                                     ),
                                   ),
                                 ],
@@ -583,11 +652,9 @@ class _Home extends State<HomeScreen> {
                                   setState(() {
                                     editName = false;
                                   });
-                                  if (name != nameController.text) {
-                                    updateName(nameController.text);
-                                  }
+                                  updateName(nameController.text);
                                 },
-                                readOnly: !editName,
+                                readOnly: false,
                                 autofocus: editName,
                                 controller: nameController,
                                 // Allow the TextField to expand vertically based on content
@@ -859,10 +926,10 @@ class _Home extends State<HomeScreen> {
           ),
         ],
         backgroundColor: const Color.fromRGBO(0, 0, 0, 1),
-        selectedItemColor: backgroundColor(),
+        selectedItemColor: AppBarBackground(),
         unselectedItemColor: button1(),
-        selectedFontSize: 18,
-        unselectedFontSize: 16,
+        selectedFontSize: 20,
+        unselectedFontSize: 18,
         showUnselectedLabels: true,
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -887,9 +954,7 @@ class _Home extends State<HomeScreen> {
 }
 
 Widget _buildCircleButton(
-    {required IconData icon,
-    required String label,
-    required VoidCallback onPressed}) {
+    {required IconData icon, required String label, required onPressed}) {
   return Column(
     mainAxisSize: MainAxisSize.min, // To make the column as big as its children
     mainAxisAlignment: MainAxisAlignment.center,

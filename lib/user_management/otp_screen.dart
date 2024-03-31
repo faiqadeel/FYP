@@ -78,24 +78,25 @@ class _OTP_Screen extends State<OTP_Screen> {
           await user.delete();
         }
       } on FirebaseAuthException catch (ex) {
-        dialogue_box(context, ex.code.toString());
+        error_dialogue_box(context, ex.code.toString());
       }
       switch (e.code) {
         case "provider-already-linked":
-          dialogue_box(
+          error_dialogue_box(
               context, "The provider has already been linked to the user.");
           break;
         case "invalid-credential":
-          dialogue_box(context, "The provider's credential is not valid.");
+          error_dialogue_box(
+              context, "The provider's credential is not valid.");
           break;
         case "credential-already-in-use":
-          dialogue_box(
+          error_dialogue_box(
               context,
               "The account corresponding to the credential already exists, "
               "or is already linked to a Firebase User.");
           break;
         default:
-          dialogue_box(
+          error_dialogue_box(
               context, 'An error occured while processing your request');
       }
     }
@@ -116,6 +117,7 @@ class _OTP_Screen extends State<OTP_Screen> {
         backgroundColor: const Color.fromRGBO(67, 99, 114, 1.0),
       ),
       backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
+      resizeToAvoidBottomInset: true,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,

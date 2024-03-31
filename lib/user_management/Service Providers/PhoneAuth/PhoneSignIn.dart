@@ -44,6 +44,7 @@ class _PhoneSignInState extends State<PhoneSignIn> {
         centerTitle: true,
         title: Text("Sign In with Phone"),
       ),
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: ListView(
           children: [

@@ -13,6 +13,7 @@ class Main_Page extends StatefulWidget {
 }
 
 class MyScreen extends State<Main_Page> {
+  TextEditingController nameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController passwordAgainController = TextEditingController();
   bool _obscureText = true;
@@ -21,26 +22,30 @@ class MyScreen extends State<Main_Page> {
   void createAccount(String choice) async {
     String password = passwordController.text.trim();
     String cpassword = passwordAgainController.text.trim();
-    if (password == "" || cpassword == '') {
-      dialogue_box(context, "Please fill out all the fields");
+    String name = nameController.text.trim();
+    if (password == "" || cpassword == '' || name == '') {
+      error_dialogue_box(context, "Please fill out all the fields");
     } else if (password != cpassword) {
-      dialogue_box(context, 'Passwords do not match');
+      error_dialogue_box(context, 'Passwords do not match');
     } else if (!RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).*$')
         .hasMatch(password)) {
-      dialogue_box(context,
+      error_dialogue_box(context,
           "Password must contain  at least one uppercase letter, one lowercase letter, one number, and one special character!");
     } else {
       try {
         CollectionReference collection =
             FirebaseFirestore.instance.collection('Service Providers');
-        await collection.add({
+        DocumentReference myDoc = await collection.add({
           'Phone Number': widget.provider_id,
           'Password': password,
           'Service Type': choice,
+          'Owner Name': name,
         });
-        dialogue_box(context, "Account Created Successfully");
+        myDoc.collection("Booking Requests");
+        success_dialogue_box(context, "Account Created Successfully");
       } catch (e) {
-        dialogue_box(context, "An error occured while creating your account");
+        error_dialogue_box(
+            context, "An error occured while creating your account");
       }
     }
   }
@@ -53,6 +58,7 @@ class MyScreen extends State<Main_Page> {
             style: TextStyle(color: Color.fromARGB(255, 2, 2, 2))),
         centerTitle: true,
       ),
+      resizeToAvoidBottomInset: true,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -68,6 +74,34 @@ class MyScreen extends State<Main_Page> {
               ),
             ),
             const SizedBox(height: 20),
+            Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: TextField(
+                    style: const TextStyle(
+                        color: Color.fromRGBO(244, 241, 222, 1.0)),
+                    controller: nameController,
+                    keyboardType: TextInputType.name,
+                    decoration: InputDecoration(
+                        // prefixIcon: Icon(Icons),
+                        prefixIcon:
+                            prefixIcon("./assets/icons/person_icon.png"),
+                        disabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10))),
+                        enabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10))),
+                        labelText: 'Enter You Name',
+                        labelStyle: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                        border: const OutlineInputBorder(),
+                        filled: true,
+                        fillColor: const Color.fromRGBO(67, 99, 114, 1.0)))),
             Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

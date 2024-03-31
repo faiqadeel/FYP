@@ -2,12 +2,12 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:my_app/Service%20Providers/Screens/HotelOwner.dart';
+import 'package:my_app/Service%20Providers/Screens/TourGuide.dart';
+import 'package:my_app/Service%20Providers/Screens/TransportOwner.dart';
 import 'package:my_app/components/dialogBox.dart';
 import 'package:my_app/components/iconComponents.dart';
 import 'package:my_app/components/textFieldComponent.dart';
-import 'package:my_app/user_management/Service%20Providers/Screens/HotelOwner.dart';
-import 'package:my_app/user_management/Service%20Providers/Screens/TourGuide.dart';
-import 'package:my_app/user_management/Service%20Providers/Screens/TransportOwner.dart';
 import 'package:my_app/user_management/forgot_password.dart';
 
 class LoginSP extends StatefulWidget {
@@ -30,7 +30,7 @@ class Login extends State<LoginSP> {
     String password = passController.text.trim();
 
     if (phone == "" || password == "") {
-      dialogue_box(context, 'Please fill out all the fields!');
+      error_dialogue_box(context, 'Please fill out all the fields!');
     } else {
       try {
         QuerySnapshot serviceProvier = await FirebaseFirestore.instance
@@ -64,11 +64,11 @@ class Login extends State<LoginSP> {
                       builder: (context) => TourGuide(provider_id: num)));
             }
           } else {
-            dialogue_box(context, "Incorrect Password");
+            error_dialogue_box(context, "Incorrect Password");
           }
         }
       } catch (ex) {
-        dialogue_box(context, ex.toString());
+        error_dialogue_box(context, ex.toString());
       }
     }
   }
@@ -89,6 +89,7 @@ class Login extends State<LoginSP> {
         backgroundColor: Color.fromRGBO(67, 99, 114, 1.0),
       ),
       backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
+      resizeToAvoidBottomInset: true,
       body: Center(
         child: Form(
           key: _Loginformfield,

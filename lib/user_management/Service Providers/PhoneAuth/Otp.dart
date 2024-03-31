@@ -51,6 +51,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
         centerTitle: true,
         title: const Text("Verify OTP"),
       ),
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: ListView(
           children: [

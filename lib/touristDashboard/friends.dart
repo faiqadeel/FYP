@@ -50,7 +50,7 @@ class _Friends extends State<Friends> {
       showText();
     } catch (e) {
       print("error");
-      dialogue_box(context, e.toString());
+      error_dialogue_box(context, e.toString());
     }
   }
 
@@ -200,10 +200,15 @@ class _Friends extends State<Friends> {
                                             color: Colors.white,
                                             iconSize: 30,
                                             onPressed: () {
-                                              Profile(
-                                                friendName: friends![index],
-                                                name: widget.name,
-                                              );
+                                              Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          Profile(
+                                                            friendName:
+                                                                friends![index],
+                                                            name: widget.name,
+                                                          )));
                                             },
                                             icon: const Icon(Icons.account_box))
                                       ],

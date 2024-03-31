@@ -91,7 +91,7 @@ class _newTrip extends State<NewTrip> {
       return friends;
     } catch (e) {
       // ignore: use_build_context_synchronously
-      dialogue_box(context, "Error while fetching friends");
+      error_dialogue_box(context, "Error while fetching friends");
     }
     return friends;
   }
@@ -165,6 +165,7 @@ class _newTrip extends State<NewTrip> {
         centerTitle: true,
         title: Text("Create New Trip", style: AppBarTextStyle()),
       ),
+      resizeToAvoidBottomInset: true,
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

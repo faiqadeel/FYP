@@ -68,15 +68,18 @@
 //         //     ))
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:is_first_run/is_first_run.dart';
-import 'package:my_app/touristDashboard/Profile.dart';
+import 'package:my_app/firebase_options.dart';
+
+import 'touristDashboard/Service Provider Screens/local_guide.dart';
 
 void main() async {
   // Initialize Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(MyApp());
 }
@@ -98,11 +101,9 @@ class MyApp extends StatelessWidget {
           textTheme: GoogleFonts.aBeeZeeTextTheme(),
         ),
         debugShowCheckedModeBanner: false,
-        // home: HomeScreen(email:"faiq12@gmail.com")
-        home: const Profile(
-          name: "name",
-          friendName: "def",
-        )
+        // home:
+
+        home: LocalGuide()
         // isFirst == false ? const LoginPage() : const SignUpPage()
         // isFirstTime ? const SignUpPage() : const LoginPage(),
         );

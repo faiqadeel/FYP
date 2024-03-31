@@ -41,7 +41,7 @@ class _RequestsState extends State<Requests> {
       print(myName);
       print(name);
     } catch (e) {
-      dialogue_box(context, e.toString());
+      error_dialogue_box(context, e.toString());
     }
   }
 
@@ -58,7 +58,7 @@ class _RequestsState extends State<Requests> {
       });
       friendRequests.remove(name);
     } catch (e) {
-      dialogue_box(context, "Error removing the request");
+      error_dialogue_box(context, "Error removing the request");
     }
   }
 
@@ -74,7 +74,7 @@ class _RequestsState extends State<Requests> {
           (myDocument.data() as Map<String, dynamic>)['FriendRequests'];
       return friendRequests;
     } catch (e) {
-      dialogue_box(context, e.toString());
+      error_dialogue_box(context, e.toString());
     }
     return friendRequests;
   }

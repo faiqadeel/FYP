@@ -4,6 +4,7 @@ import 'package:my_app/components/dialogBox.dart';
 import 'package:my_app/components/textFieldComponent.dart';
 
 import 'CreatePostScreen.dart';
+import 'Profile.dart';
 
 class Social extends StatefulWidget {
   final String name;
@@ -31,7 +32,7 @@ class _SocialState extends State<Social> {
         ProfileUrl = myDoc['Profile URL'];
       });
     } catch (e) {
-      dialogue_box(context, e.toString());
+      error_dialogue_box(context, e.toString());
     }
   }
 
@@ -57,10 +58,21 @@ class _SocialState extends State<Social> {
                 child: Column(
                   children: [
                     ListTile(
-                      leading: CircleAvatar(
-                          backgroundImage: NetworkImage(ProfileUrl == ""
-                              ? "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                              : ProfileUrl)), // Assuming the first URL is the user's profile picture
+                      leading: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Profile(
+                                        friendName: post.postedBy,
+                                        name: widget.name,
+                                      )));
+                        },
+                        child: CircleAvatar(
+                            backgroundImage: NetworkImage(ProfileUrl == ""
+                                ? "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                                : ProfileUrl)),
+                      ), // Assuming the first URL is the user's profile picture
                       title: Text(post.postedBy),
                       subtitle: Text('${post.Description}'),
                     ),

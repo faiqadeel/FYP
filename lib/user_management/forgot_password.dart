@@ -25,7 +25,7 @@ class ForgotPassword extends State<ForgotPasswordScreen> {
     try {
       userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: "123334");
-      dialogue_box(context, "The provided email does not exists!!");
+      error_dialogue_box(context, "The provided email does not exists!!");
       User user = userCredential.user!;
       await user.delete();
     } on FirebaseAuthException catch (e) {
@@ -43,7 +43,7 @@ class ForgotPassword extends State<ForgotPasswordScreen> {
             },
             verificationCompleted: (credential) {},
             verificationFailed: (ex) {
-              dialogue_box(context, 'Verification Failed');
+              error_dialogue_box(context, 'Verification Failed');
             },
             codeAutoRetrievalTimeout: (String verificationId) {});
       }
@@ -64,6 +64,7 @@ class ForgotPassword extends State<ForgotPasswordScreen> {
         backgroundColor: const Color.fromRGBO(67, 99, 114, 1.0),
       ),
       backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
+      resizeToAvoidBottomInset: true,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,

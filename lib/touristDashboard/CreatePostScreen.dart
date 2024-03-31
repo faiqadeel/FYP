@@ -71,6 +71,7 @@ class _CreatePostScreenState extends State<CreatePost> {
         centerTitle: true,
         backgroundColor: AppBarBackground(),
       ),
+      resizeToAvoidBottomInset: true,
       body: SingleChildScrollView(
         child: Column(
           children: [

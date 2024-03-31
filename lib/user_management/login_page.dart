@@ -28,7 +28,7 @@ class Login extends State<LoginPage> {
     String password = passController.text.trim();
 
     if (email == "" || password == "") {
-      dialogue_box(context, 'Please fill out all the fields!');
+      error_dialogue_box(context, 'Please fill out all the fields!');
     } else {
       try {
         UserCredential userCredential = await FirebaseAuth.instance
@@ -41,7 +41,7 @@ class Login extends State<LoginPage> {
                   builder: (context) => HomeScreen(email: email)));
         }
       } on FirebaseAuthException catch (ex) {
-        dialogue_box(context, ex.code.toString());
+        error_dialogue_box(context, ex.code.toString());
       }
     }
   }
@@ -62,6 +62,7 @@ class Login extends State<LoginPage> {
         backgroundColor: Color.fromRGBO(67, 99, 114, 1.0),
       ),
       backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
+      resizeToAvoidBottomInset: true,
       body: Center(
         child: Form(
           key: _Loginformfield,

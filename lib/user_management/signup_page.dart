@@ -59,7 +59,7 @@ class SignUp extends State<SignUpPage> {
             print('verified');
           },
           verificationFailed: (ex) {
-            dialogue_box(context, 'Verification Failed');
+            error_dialogue_box(context, 'Verification Failed');
             print('not verified');
           },
           codeAutoRetrievalTimeout: (String verificationId) {});
@@ -71,21 +71,21 @@ class SignUp extends State<SignUpPage> {
         password == "" ||
         cpassword == "" ||
         number == "") {
-      dialogue_box(context, "Please fill out all the fields!!");
+      error_dialogue_box(context, "Please fill out all the fields!!");
     } else if (numExp.hasMatch(name)) {
-      dialogue_box(context, "Name cannot contain numbers");
+      error_dialogue_box(context, "Name cannot contain numbers");
     } else if (!RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).*$')
         .hasMatch(password)) {
-      dialogue_box(context,
+      error_dialogue_box(context,
           "Password must contain  at least one uppercase letter, one lowercase letter, one number, and one special character!");
     } else if (password != cpassword) {
-      dialogue_box(context, 'Passwords do not match');
+      error_dialogue_box(context, 'Passwords do not match');
     } else if (!RegExp(r'^[a-zA-Z0-9]+@gmail\.com$').hasMatch(email)) {
-      dialogue_box(context, "Enter a valid email address");
+      error_dialogue_box(context, "Enter a valid email address");
     } else if (number[0] != "0" || number[1] != "3" || number.length != 11) {
-      dialogue_box(context, "Please enter a valid mobile number!");
+      error_dialogue_box(context, "Please enter a valid mobile number!");
     } else if (alphExp.hasMatch(number)) {
-      dialogue_box(context, 'Number cannot contain alphabets');
+      error_dialogue_box(context, 'Number cannot contain alphabets');
     } else {
       send_OTP();
     }
@@ -106,6 +106,7 @@ class SignUp extends State<SignUpPage> {
         backgroundColor: const Color.fromRGBO(67, 99, 114, 1.0),
       ),
       backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
+      resizeToAvoidBottomInset: true,
       body: Center(
         child: Form(
           key: _Signupformfield,
@@ -240,8 +241,8 @@ class SignUp extends State<SignUpPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 child: SizedBox(
-                  width:100,
-                  height:50,
+                  width: 100,
+                  height: 50,
                   child: ElevatedButton(
                     onPressed: () {
                       createAccount(context);
