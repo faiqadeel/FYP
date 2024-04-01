@@ -50,14 +50,10 @@ class _LocalGuideState extends State<LocalGuide> {
         borderRadius: BorderRadius.circular(20.0),
         child: Column(
           children: <Widget>[
-            CachedNetworkImage(
-              imageUrl: guide.get('Profile URL'),
-              placeholder: (context, url) => const CircularProgressIndicator(),
-              errorWidget: (context, url, error) => const Icon(Icons.error),
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: 200,
-            ),
+            Image(image: NetworkImage(
+                guide.get("Profile URL")),height: 200, // Set a fixed height or make it dynamic
+                width: double.infinity,
+                fit: BoxFit.cover),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

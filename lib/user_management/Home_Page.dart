@@ -116,6 +116,7 @@ class _Home extends State<HomeScreen> {
       name = myDoc['name'];
       mobileNumber = myDoc['mobile number'];
       profileURL = myDoc['Profile URL'];
+      nameController.text = name;
     });
     return myDoc['name'];
   }
@@ -126,7 +127,6 @@ class _Home extends State<HomeScreen> {
     getUserData();
     setState(() {
       email = widget.email;
-      nameController.text = name;
     });
   }
 
@@ -191,7 +191,16 @@ class _Home extends State<HomeScreen> {
           FirebaseStorage.instance.ref("Profile_Pics").child("${widget.email}");
       TaskSnapshot task = await ref.putData(fileBytes);
       String downloadurl = await task.ref.getDownloadURL();
-      print(downloadurl);
+      setState(() {
+        profileURL = downloadurl;
+      });
+      CollectionReference myCollection =
+          await FirebaseFirestore.instance.collection('tourists');
+      QuerySnapshot docs =
+          await myCollection.where("name", isEqualTo: name).get();
+      DocumentReference docRef = myCollection.doc(docs.docs.first.id);
+      await docRef.update({"Profile URL": downloadurl});
+      success_dialogue_box(context, "Profile Photo Updated Successfully!!");
     } catch (e) {
       error_dialogue_box(context, e.toString());
     }
@@ -262,7 +271,7 @@ class _Home extends State<HomeScreen> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 0),
+                                  vertical: 10, horizontal: 5),
                               child: Container(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 10),
@@ -277,7 +286,7 @@ class _Home extends State<HomeScreen> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      "Hello ${name}",
+                                      "Hello, ${name}",
                                       style: TextStyle(
                                         color: button1(),
                                         fontWeight: FontWeight.bold,
@@ -339,12 +348,16 @@ class _Home extends State<HomeScreen> {
                                     color: Colors.grey,
                                   ),
                                   disabledBorder: const OutlineInputBorder(
-                                    borderSide: BorderSide.none,
+                                    borderSide: BorderSide(
+                                        color: Colors.grey,
+                                        style: BorderStyle.solid),
                                     borderRadius:
                                         BorderRadius.all(Radius.circular(10)),
                                   ),
                                   enabledBorder: const OutlineInputBorder(
-                                    borderSide: BorderSide.none,
+                                    borderSide: BorderSide(
+                                        color: Colors.grey,
+                                        style: BorderStyle.solid),
                                     borderRadius:
                                         BorderRadius.all(Radius.circular(10)),
                                   ),
@@ -365,10 +378,20 @@ class _Home extends State<HomeScreen> {
                         ),
                       ),
                       Container(
-                        margin: const EdgeInsets.symmetric(vertical: 10),
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 5),
                         height: 70,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NewTrip(
+                                  createdBy: widget.email,
+                                ),
+                              ),
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: button1(),
                             shape: RoundedRectangleBorder(
@@ -378,6 +401,7 @@ class _Home extends State<HomeScreen> {
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               const Text(
                                 "Start a Trip",
@@ -388,16 +412,7 @@ class _Home extends State<HomeScreen> {
                                 ),
                               ),
                               IconButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => NewTrip(
-                                        createdBy: widget.email,
-                                      ),
-                                    ),
-                                  );
-                                },
+                                onPressed: () {},
                                 icon: const Icon(
                                   Icons.arrow_circle_right_outlined,
                                   size: 40,
@@ -508,6 +523,21 @@ class _Home extends State<HomeScreen> {
                       ),
                       backgroundColor: AppBarBackground(),
                       centerTitle: true,
+                      actions: [
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          NewTrip(createdBy: widget.email)));
+                            });
+                          },
+                          icon: const Icon(Icons.add_card),
+                          iconSize: 35,
+                        ),
+                      ],
                     ),
                     body: FutureBuilder<List<Map<String, dynamic>>>(
                       future: fetchTripItinerary(),
@@ -619,10 +649,10 @@ class _Home extends State<HomeScreen> {
                         children: [
                           const SizedBox(width: 400, height: 30),
                           Stack(children: [
-                            _image != null
+                            profileURL != null
                                 ? CircleAvatar(
                                     radius: 35,
-                                    backgroundImage: MemoryImage(_image!),
+                                    backgroundImage: NetworkImage(profileURL),
                                   )
                                 : const CircleAvatar(
                                     radius: 35,

@@ -147,12 +147,10 @@ class _HotelScreenState extends State<HotelScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Display the hotel picture
-                  Image.network(
-                    hotel.pictureUrl,
-                    height: 200, // Set a fixed height or make it dynamic
+                  Image(image: NetworkImage(
+                    hotel.pictureUrl),height: 200, // Set a fixed height or make it dynamic
                     width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                    fit: BoxFit.cover),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

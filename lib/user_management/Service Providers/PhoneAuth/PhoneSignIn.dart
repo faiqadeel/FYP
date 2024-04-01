@@ -3,6 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/user_management/Service%20Providers/PhoneAuth/Otp.dart';
 
+import '../../../components/Colors.dart';
+import '../../../components/textFieldComponent.dart';
+
 class PhoneSignIn extends StatefulWidget {
   final bool isVerified;
   const PhoneSignIn({super.key, required this.isVerified});
@@ -34,7 +37,7 @@ class _PhoneSignInState extends State<PhoneSignIn> {
           print(ex.code.toString());
         },
         codeAutoRetrievalTimeout: (verificationId) {},
-        timeout: Duration(seconds: 30));
+        timeout: const Duration(seconds: 30));
   }
 
   @override
@@ -42,29 +45,37 @@ class _PhoneSignInState extends State<PhoneSignIn> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text("Sign In with Phone"),
+        title: Text(
+          "Sign In with Phone",
+          style: AppBarTextStyle(),
+        ),
+        backgroundColor: AppBarBackground(),
       ),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: ListView(
           children: [
             Padding(
-              padding: EdgeInsets.all(15),
+              padding: const EdgeInsets.all(15),
               child: Column(
                 children: [
                   TextField(
                     controller: phoneController,
-                    decoration: InputDecoration(labelText: "Phone Number"),
+                    decoration:
+                        const InputDecoration(labelText: "Phone Number"),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 20,
                   ),
                   CupertinoButton(
                     onPressed: () {
                       sendOTP();
                     },
-                    color: Colors.blue,
-                    child: Text("Sign In"),
+                    color: button2(),
+                    child: const Text(
+                      "Sign In",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),

@@ -88,13 +88,10 @@ class _createTransport extends State<Transport> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Display the hotel picture
-                          Image.network(
-                            vehicle.pictureUrl,
-                            height:
-                                200, // Set a fixed height or make it dynamic
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
+                          Image(image: NetworkImage(
+                              vehicle.pictureUrl),height: 200, // Set a fixed height or make it dynamic
+                              width: double.infinity,
+                              fit: BoxFit.cover),
                           const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -5,6 +5,8 @@ import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:my_app/components/Colors.dart';
+import 'package:my_app/components/textFieldComponent.dart';
 import 'package:my_app/user_management/Service%20Providers/main_page.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
@@ -49,7 +51,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text("Verify OTP"),
+        title: Text("Verify OTP", style: AppBarTextStyle()),
+        backgroundColor: AppBarBackground(),
       ),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
@@ -72,8 +75,11 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                     onPressed: () {
                       verifyOTP();
                     },
-                    color: Colors.blue,
-                    child: const Text("Verify"),
+                    color: button2(),
+                    child: const Text(
+                      "Verify",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),

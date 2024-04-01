@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/components/dialogBox.dart';
 import 'package:my_app/components/textFieldComponent.dart';
 
+import '../components/Colors.dart';
 import 'CreatePostScreen.dart';
 import 'Profile.dart';
 
@@ -42,6 +43,7 @@ class _SocialState extends State<Social> {
       appBar: AppBar(
         title: Text('Activity Feed', style: AppBarTextStyle()),
         centerTitle: true,
+        backgroundColor: AppBarBackground(),
       ),
       body: FutureBuilder<List<Post>>(
         future: fetchPosts(),
@@ -76,7 +78,7 @@ class _SocialState extends State<Social> {
                       title: Text(post.postedBy),
                       subtitle: Text('${post.Description}'),
                     ),
-                    Image.network(post.mediaUrl), // Post media
+                    Image(image:NetworkImage(post.mediaUrl)), // Post media
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [

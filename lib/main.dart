@@ -68,18 +68,16 @@
 //         //     ))
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:is_first_run/is_first_run.dart';
-import 'package:my_app/firebase_options.dart';
 
-import 'touristDashboard/Service Provider Screens/local_guide.dart';
+import 'Service Providers/Screens/HotelOwner.dart';
 
 void main() async {
   // Initialize Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(MyApp());
 }
@@ -103,8 +101,9 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         // home:
 
-        home: LocalGuide()
+        home: HotelOwner(provider_id: "03405794447")
         // isFirst == false ? const LoginPage() : const SignUpPage()
+        // LocalGuide()
         // isFirstTime ? const SignUpPage() : const LoginPage(),
         );
   }

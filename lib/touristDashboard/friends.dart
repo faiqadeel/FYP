@@ -242,9 +242,7 @@ class _Friends extends State<Friends> {
                         myDocs.forEach((element) {
                           if (friends!.contains(element['name']) ||
                               friendRequests!.contains(element['name']) ||
-                              sentRequests!.contains(element['name']) &&
-                                  notFriends!.contains(element['name'])) {
-                            notFriends!.remove(element['name']);
+                              element['FriendRequests']!.contains(widget.name)) {
                           } else {
                             notFriends!.add(element['name']);
                           }
