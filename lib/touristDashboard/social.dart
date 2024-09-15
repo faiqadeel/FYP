@@ -55,6 +55,7 @@ class _SocialState extends State<Social> {
             itemBuilder: (context, index) {
               Post post = snapshot.data![index];
               fetchProfileURL(post.postedBy);
+              print("IMAGE URL IS" + post.mediaUrl!.toString());
               return Card(
                 margin: EdgeInsets.all(8),
                 child: Column(
@@ -78,15 +79,34 @@ class _SocialState extends State<Social> {
                       title: Text(post.postedBy),
                       subtitle: Text('${post.Description}'),
                     ),
-                    Image(image:NetworkImage(post.mediaUrl)), // Post media
+                    Image(image: NetworkImage(post.mediaUrl)), // Post media
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         IconButton(
                           icon: Icon(Icons.favorite_border),
-                          onPressed: () {},
+                          onPressed: () async {
+                            try {
+                              CollectionReference colRef = FirebaseFirestore
+                                  .instance
+                                  .collection("Posts");
+                              QuerySnapshot postRef = await FirebaseFirestore
+                                  .instance
+                                  .collection("Posts")
+                                  .where("Media UrL", isEqualTo: post.mediaUrl)
+                                  .get();
+                              DocumentSnapshot postDoc = postRef.docs.first;
+
+                              double likes = postDoc["likes"];
+                              await colRef
+                                  .doc(postDoc.id)
+                                  .update({"likes": likes + 1});
+                            } catch (e) {
+                              error_dialogue_box(context, e.toString());
+                            }
+                          },
                         ),
-                        Text('${post.likes}'),
+                        Text(post.likes.toString()),
                       ],
                     ),
                   ],
@@ -126,7 +146,7 @@ class Post {
   factory Post.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map;
     return Post(
-      mediaUrl: data['Media URL'] ?? '',
+      mediaUrl: data['Media Url'] ?? '',
       postedBy: data['Posted By'] ?? '',
       likes: int.parse(data['likes'].toString()) ?? 0,
       Description: data["Description"] ?? "",

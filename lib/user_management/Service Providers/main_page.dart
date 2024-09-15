@@ -46,6 +46,13 @@ class MyScreen extends State<Main_Page> {
           'Owner Name': name,
         });
         myDoc.collection("Booking Requests");
+        myDoc.collection("Accepted Requests");
+        if (choice == "TransportOwner") {
+          myDoc.collection("Vehicles");
+        } else if (choice == "HotelOwner") {
+          myDoc.collection("Rooms");
+          myDoc.collection("Dishes");
+        }
         success_dialogue_box(context, "Account Created Successfully");
         Navigator.popUntil(context, (route) => route.isFirst);
         Navigator.pushReplacement(

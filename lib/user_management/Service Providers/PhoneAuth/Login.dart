@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/Service%20Providers/Screens/HotelOwner.dart';
 import 'package:my_app/Service%20Providers/Screens/TourGuide.dart';
@@ -24,51 +25,58 @@ class Login extends State<LoginSP> {
   bool _obscureText = true;
 
   void process_login() async {
-    String phone = phoneNumber.text.trim();
-    String org_num = phone.substring(1);
-    String num = "+92$org_num";
-    String password = passController.text.trim();
-
-    if (phone == "" || password == "") {
-      error_dialogue_box(context, 'Please fill out all the fields!');
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      error_dialogue_box(context,
+          "Your phone is not connected to the internet. Please check you connection and try again!!");
     } else {
-      try {
-        QuerySnapshot serviceProvier = await FirebaseFirestore.instance
-            .collection("Service Providers")
-            .where('Phone Number', isEqualTo: num)
-            .get();
-        if (serviceProvier.docs.isNotEmpty) {
-          DocumentSnapshot sp = serviceProvier.docs.first;
-          String servicetype =
-              (sp.data() as Map<String, dynamic>)['Service Type'];
-          if (password == (sp.data() as Map<String, dynamic>)['Password']) {
-            if (servicetype == "HotelOwner") {
-              Navigator.popUntil(context, (route) => route.isFirst);
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => HotelOwner(
-                            provider_id: num,
-                          )));
-            } else if (servicetype == "TransportOwner") {
-              Navigator.popUntil(context, (route) => route.isFirst);
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TransportOwner(provider_id: num)));
+      String phone = phoneNumber.text.trim();
+      String org_num = phone.substring(1);
+      String num = "+92$org_num";
+      String password = passController.text.trim();
+
+      if (phone == "" || password == "") {
+        error_dialogue_box(context, 'Please fill out all the fields!');
+      } else {
+        try {
+          QuerySnapshot serviceProvier = await FirebaseFirestore.instance
+              .collection("Service Providers")
+              .where('Phone Number', isEqualTo: num)
+              .get();
+          if (serviceProvier.docs.isNotEmpty) {
+            DocumentSnapshot sp = serviceProvier.docs.first;
+            String servicetype =
+                (sp.data() as Map<String, dynamic>)['Service Type'];
+            if (password == (sp.data() as Map<String, dynamic>)['Password']) {
+              if (servicetype == "HotelOwner") {
+                Navigator.popUntil(context, (route) => route.isFirst);
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => HotelOwner(
+                              provider_id: num,
+                            )));
+              } else if (servicetype == "TransportOwner") {
+                Navigator.popUntil(context, (route) => route.isFirst);
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            TransportOwner(provider_id: num)));
+              } else {
+                Navigator.popUntil(context, (route) => route.isFirst);
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => TourGuide(provider_id: num)));
+              }
             } else {
-              Navigator.popUntil(context, (route) => route.isFirst);
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TourGuide(provider_id: num)));
+              error_dialogue_box(context, "Incorrect Password");
             }
-          } else {
-            error_dialogue_box(context, "Incorrect Password");
           }
+        } catch (ex) {
+          error_dialogue_box(context, ex.toString());
         }
-      } catch (ex) {
-        error_dialogue_box(context, ex.toString());
       }
     }
   }
@@ -176,7 +184,7 @@ class Login extends State<LoginSP> {
                     top: 10, left: 40, right: 40, bottom: 5),
                 child: ElevatedButton(
                   onPressed: () {
-                    // process_login();
+                    process_login();
                   },
                   style: ElevatedButton.styleFrom(
                       backgroundColor: Color.fromRGBO(238, 30, 30, 1),

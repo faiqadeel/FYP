@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/components/dialogBox.dart';
@@ -23,24 +24,30 @@ class Login extends State<H_T_LoginPage> {
   bool _obscureText = true;
 
   void process_login() async {
-    String email = emailController.text.trim();
-    String password = passController.text.trim();
-
-    if (email == "" || password == "") {
-      error_dialogue_box(context, 'Please fill out all the fields!');
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      error_dialogue_box(context,
+          "Your phone is not connected to the internet. Please check you connection and try again!!");
     } else {
-      try {
-        UserCredential userCredential = await FirebaseAuth.instance
-            .signInWithEmailAndPassword(email: email, password: password);
-        if (userCredential.user != null) {
-          Navigator.popUntil(context, (route) => route.isFirst);
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => HomeScreen(email: email)));
+      String email = emailController.text.trim();
+      String password = passController.text.trim();
+
+      if (email == "" || password == "") {
+        error_dialogue_box(context, 'Please fill out all the fields!');
+      } else {
+        try {
+          UserCredential userCredential = await FirebaseAuth.instance
+              .signInWithEmailAndPassword(email: email, password: password);
+          if (userCredential.user != null) {
+            Navigator.popUntil(context, (route) => route.isFirst);
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => HomeScreen(email: email)));
+          }
+        } on FirebaseAuthException catch (ex) {
+          error_dialogue_box(context, ex.code.toString());
         }
-      } on FirebaseAuthException catch (ex) {
-        error_dialogue_box(context, ex.code.toString());
       }
     }
   }

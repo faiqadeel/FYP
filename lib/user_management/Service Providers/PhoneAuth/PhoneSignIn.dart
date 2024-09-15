@@ -1,6 +1,8 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:my_app/components/dialogBox.dart';
 import 'package:my_app/user_management/Service%20Providers/PhoneAuth/Otp.dart';
 
 import '../../../components/Colors.dart';
@@ -17,27 +19,33 @@ class _PhoneSignInState extends State<PhoneSignIn> {
   TextEditingController phoneController = TextEditingController();
 
   void sendOTP() async {
-    String number = phoneController.text.trim();
-    String org_num = number.substring(1);
-    String phone = "+92$org_num";
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      error_dialogue_box(context,
+          "Your phone is not connected to the internet. Please check you connection and try again!!");
+    } else {
+      String number = phoneController.text.trim();
+      String org_num = number.substring(1);
+      String phone = "+92$org_num";
 
-    await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phone,
-        codeSent: (verificationId, resendToken) {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => VerifyOtpScreen(
-                        provider_id: phone,
-                        verificationId: verificationId,
-                      )));
-        },
-        verificationCompleted: (credential) {},
-        verificationFailed: (ex) {
-          print(ex.code.toString());
-        },
-        codeAutoRetrievalTimeout: (verificationId) {},
-        timeout: const Duration(seconds: 30));
+      await FirebaseAuth.instance.verifyPhoneNumber(
+          phoneNumber: phone,
+          codeSent: (verificationId, resendToken) {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => VerifyOtpScreen(
+                          provider_id: phone,
+                          verificationId: verificationId,
+                        )));
+          },
+          verificationCompleted: (credential) {},
+          verificationFailed: (ex) {
+            print(ex.code.toString());
+          },
+          codeAutoRetrievalTimeout: (verificationId) {},
+          timeout: const Duration(seconds: 30));
+    }
   }
 
   @override

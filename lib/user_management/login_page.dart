@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/components/dialogBox.dart';
@@ -22,26 +23,39 @@ class Login extends State<LoginPage> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passController = TextEditingController();
   bool _obscureText = true;
+  bool isLoading = false;
 
   void process_login() async {
-    String email = emailController.text.trim();
-    String password = passController.text.trim();
-
-    if (email == "" || password == "") {
-      error_dialogue_box(context, 'Please fill out all the fields!');
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      error_dialogue_box(context,
+          "Your phone is not connected to the internet. Please check you connection and try again!!");
     } else {
-      try {
-        UserCredential userCredential = await FirebaseAuth.instance
-            .signInWithEmailAndPassword(email: email, password: password);
-        if (userCredential.user != null) {
-          Navigator.popUntil(context, (route) => route.isFirst);
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => HomeScreen(email: email)));
+      String email = emailController.text.trim();
+      String password = passController.text.trim();
+
+      if (email == "" || password == "") {
+        error_dialogue_box(context, 'Please fill out all the fields!');
+      } else {
+        setState(() {
+          isLoading = true;
+        });
+        try {
+          UserCredential userCredential = await FirebaseAuth.instance
+              .signInWithEmailAndPassword(email: email, password: password);
+          if (userCredential.user != null) {
+            setState(() {
+              isLoading = false;
+            });
+            Navigator.popUntil(context, (route) => route.isFirst);
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => HomeScreen(email: email)));
+          }
+        } on FirebaseAuthException catch (ex) {
+          error_dialogue_box(context, ex.code.toString());
         }
-      } on FirebaseAuthException catch (ex) {
-        error_dialogue_box(context, ex.code.toString());
       }
     }
   }
@@ -63,152 +77,178 @@ class Login extends State<LoginPage> {
       ),
       backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
       resizeToAvoidBottomInset: true,
-      body: Center(
-        child: Form(
-          key: _Loginformfield,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Padding(
-              //   padding: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-              //   child: Image.file(
-              //     AssetImage("assets/icons/loginPage/cover.png"),
-              //     fit: BoxFit.cover,
-              //   ),
-              // ),
-              Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                  child: TextFormField(
-                    style: const TextStyle(
-                      color: Colors.white,
-                    ),
-                    controller: emailController,
-                    keyboardType: TextInputType.text,
-                    decoration: textFieldDecoration(
-                        './assets/icons/mail_icon.png', 'Email'),
-                  )),
-              Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  child: TextField(
-                    style: const TextStyle(
-                      color: Colors.white,
-                    ),
-                    controller: passController,
-                    obscureText: _obscureText,
-                    decoration: InputDecoration(
-                        // prefixIcon: Icon(Icons),
-                        prefixIcon: prefixIcon("./assets/icons/pwd_icon.png"),
-                        suffixIcon: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                _obscureText = !_obscureText;
-                              });
-                            },
-                            icon: Icon(_obscureText
-                                ? Icons.visibility
-                                : Icons.visibility_off)),
-                        disabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide.none,
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10))),
-                        enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide.none,
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10))),
-                        labelText: 'password',
-                        labelStyle: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+              color: Colors.white,
+            ))
+          : Center(
+              child: Form(
+                key: _Loginformfield,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Padding(
+                    //   padding: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                    //   child: Image.file(
+                    //     AssetImage("assets/icons/loginPage/cover.png"),
+                    //     fit: BoxFit.cover,
+                    //   ),
+                    // ),
+                    Padding(
+                      padding: const EdgeInsets.only(
+                          top: 8.0,
+                          bottom:
+                              40), // Add padding to move image down from the AppBar
+                      child: ClipOval(
+                        child: Image.asset(
+                          './assets/icons/loginPage/cover.png', // The file path to the image
+                          width:
+                              150, // The size of the circle, adjust as needed
+                          height: 150,
+                          fit: BoxFit.cover,
                         ),
-                        border: const OutlineInputBorder(),
-                        filled: true,
-                        fillColor: const Color.fromRGBO(67, 99, 114, 1.0)),
-                  )),
-              Padding(
-                  padding: const EdgeInsets.only(
-                      left: 160, right: 20, top: 5, bottom: 10),
-                  child: TextButton(
-                      onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    const ForgotPasswordScreen()));
-                      },
-                      child: const Text(
-                        'Forgot Password?',
-                        style: TextStyle(
-                            color: Color.fromRGBO(244, 241, 222, 1.0),
-                            fontSize: 17),
-                      ))),
-              Padding(
-                padding: const EdgeInsets.only(
-                    top: 10, left: 40, right: 40, bottom: 5),
-                child: ElevatedButton(
-                  onPressed: () {
-                    process_login();
-                  },
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Color.fromRGBO(238, 30, 30, 1),
-                      fixedSize: const Size(200, 50),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0))),
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(
-                        color: Color.fromRGBO(244, 241, 222, 1.0),
-                        fontSize: 30),
-                  ),
+                      ),
+                    ),
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 5),
+                        child: TextFormField(
+                          style: const TextStyle(
+                            color: Colors.white,
+                          ),
+                          controller: emailController,
+                          keyboardType: TextInputType.text,
+                          decoration: textFieldDecoration(
+                              './assets/icons/mail_icon.png', 'Email'),
+                        )),
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 4),
+                        child: TextField(
+                          style: const TextStyle(
+                            color: Colors.white,
+                          ),
+                          controller: passController,
+                          obscureText: _obscureText,
+                          decoration: InputDecoration(
+                              // prefixIcon: Icon(Icons),
+                              prefixIcon:
+                                  prefixIcon("./assets/icons/pwd_icon.png"),
+                              suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureText = !_obscureText;
+                                    });
+                                  },
+                                  icon: Icon(_obscureText
+                                      ? Icons.visibility
+                                      : Icons.visibility_off)),
+                              disabledBorder: const OutlineInputBorder(
+                                  borderSide: BorderSide.none,
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(10))),
+                              enabledBorder: const OutlineInputBorder(
+                                  borderSide: BorderSide.none,
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(10))),
+                              labelText: 'password',
+                              labelStyle: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                              ),
+                              border: const OutlineInputBorder(),
+                              filled: true,
+                              fillColor:
+                                  const Color.fromRGBO(67, 99, 114, 1.0)),
+                        )),
+                    Padding(
+                        padding: const EdgeInsets.only(
+                            left: 160, right: 20, top: 5, bottom: 10),
+                        child: TextButton(
+                            onPressed: () {
+                              Navigator.popUntil(
+                                  context, (route) => route.isFirst);
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ForgotPasswordScreen()));
+                            },
+                            child: const Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                  color: Color.fromRGBO(244, 241, 222, 1.0),
+                                  fontSize: 17),
+                            ))),
+                    Padding(
+                      padding: const EdgeInsets.only(
+                          top: 10, left: 40, right: 40, bottom: 5),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          process_login();
+                        },
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Color.fromRGBO(238, 30, 30, 1),
+                            fixedSize: const Size(200, 50),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0))),
+                        child: const Text(
+                          'Login',
+                          style: TextStyle(
+                              color: Color.fromRGBO(244, 241, 222, 1.0),
+                              fontSize: 30),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 80),
+                      child: Row(children: [
+                        const Text(
+                          'New Here?',
+                          style: TextStyle(
+                              color: Color.fromRGBO(244, 241, 222, 1.0),
+                              fontSize: 18),
+                        ),
+                        TextButton(
+                            onPressed: () {
+                              Navigator.popUntil(
+                                  context, (route) => route.isFirst);
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SignUpPage()));
+                            },
+                            child: const Text(
+                              'Sign Up Now',
+                              style: TextStyle(
+                                  color: Color.fromRGBO(244, 241, 222, 1.0),
+                                  fontSize: 18),
+                            ))
+                      ]),
+                    ),
+                    Padding(
+                        padding: const EdgeInsets.only(left: 5),
+                        child: TextButton(
+                            onPressed: () {
+                              Navigator.popUntil(
+                                  context, (route) => route.isFirst);
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const LoginSP()));
+                            },
+                            child: const Text(
+                              'Login as a Service Provider',
+                              style: TextStyle(
+                                  color: Color.fromRGBO(244, 241, 222, 1.0),
+                                  fontSize: 18),
+                            ))),
+                  ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 80),
-                child: Row(children: [
-                  const Text(
-                    'New Here?',
-                    style: TextStyle(
-                        color: Color.fromRGBO(244, 241, 222, 1.0),
-                        fontSize: 18),
-                  ),
-                  TextButton(
-                      onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const SignUpPage()));
-                      },
-                      child: const Text(
-                        'Sign Up Now',
-                        style: TextStyle(
-                            color: Color.fromRGBO(244, 241, 222, 1.0),
-                            fontSize: 18),
-                      ))
-                ]),
-              ),
-              Padding(
-                  padding: const EdgeInsets.only(left: 80),
-                  child: TextButton(
-                      onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginSP()));
-                      },
-                      child: const Text(
-                        'Login as a Service Provider',
-                        style: TextStyle(
-                            color: Color.fromRGBO(244, 241, 222, 1.0),
-                            fontSize: 18),
-                      ))),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

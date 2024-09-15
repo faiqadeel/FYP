@@ -1,12 +1,12 @@
 // ignore_for_file: use_build_context_synchronously, no_leading_underscores_for_local_identifiers
 
+import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:html/dom.dart' as dom;
-import 'package:html/parser.dart' as parser;
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/Trip%20Itineraries/NewTrip.dart';
@@ -32,9 +32,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _Home extends State<HomeScreen> {
-  List<String> popPlaces = [];
+  ScrollController _controller = ScrollController();
+  bool isLoading = false;
+  Timer? _timer;
+  int curIndex = 0;
+  final int _numItems = 10;
+  final Duration _animationDuration = const Duration(milliseconds: 500);
   List<String> placeURLs = [];
-  bool newTrip = false;
+  List<String> popPlaces = [];
+  bool newTrip = true;
   int _currentIndex = 0;
   Uint8List? _image;
   String name = '';
@@ -70,43 +76,8 @@ class _Home extends State<HomeScreen> {
     throw Null;
   }
 
-  Future<List<String>> getWebsiteData() async {
-    print("inside");
-    final url = Uri.parse(
-        "https://www.thebrokebackpacker.com/beautiful-places-in-pakistan/");
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      dom.Document html = parser.parse(response.body);
-
-      final places = html
-          .querySelectorAll(
-              'h2.wp-block-heading.has-text-align-center') // Corrected
-          .map((element) =>
-              element.text.trim()) // Use text for just the text content
-          .toList();
-
-      final imageURLs = html
-          .querySelectorAll(
-              "#content > article > div > div > div.col-12.order-2.offset-md-1.col-md-10.offset-lg-0.col-lg-8.order-lg-1 > div > article > div:nth-child(48) > figure > img") // Corrected
-          .map((e) =>
-              e.attributes['src'] ??
-              "") // Check for null and provide a default value
-          .toList();
-
-      // Assuming this is a Flutter Stateful Widget method
-      setState(() {
-        this.popPlaces = places;
-        this.placeURLs = imageURLs;
-      });
-
-      return imageURLs;
-    } else {
-      throw Exception('Failed to load website data');
-    }
-  }
-
   Future<String> getUserData() async {
+    await Future.delayed(Duration(seconds: 2));
     CollectionReference myCollection =
         await FirebaseFirestore.instance.collection('tourists');
     QuerySnapshot docs =
@@ -121,13 +92,83 @@ class _Home extends State<HomeScreen> {
     return myDoc['name'];
   }
 
+  getPhotos() async {
+    List data = [];
+    await Future.delayed(Duration(seconds: 2));
+    try {
+      final url = Uri.parse(
+          'https://api.unsplash.com/search/photos/?client_id=7qnMTHtL6_bNkAjHZu-Fv6uX7pRs3a4giXBu7_3G2OI&query=pakistan&per_page=10');
+
+      var response = await http.get(url);
+
+      var result = jsonDecode(response.body);
+
+      data = result['results'];
+      setState(() {
+        data.forEach((element) {
+          if (element['description'] != null) {
+            placeURLs.add(element['urls']['regular']);
+            popPlaces.add(element["description"]);
+          }
+        });
+      });
+    } catch (e) {
+      print(e.toString());
+    }
+    print("done");
+    print(placeURLs);
+    print(popPlaces);
+  }
+
   @override
-  void init() {
+  void initState() {
     super.initState();
-    getUserData();
-    setState(() {
-      email = widget.email;
+    initAsyncOperations();
+  }
+
+  Future<void> initAsyncOperations() async {
+    try {
+      // Combine all asynchronous operations into a single wait list.
+      await Future.wait([
+        getUserData(), // Assuming this is an async function
+        getPhotos() // Assuming this is an async function
+      ] as Iterable<Future>);
+
+      // Assuming _startAutoScroll does not need to be awaited.
+      _startAutoScroll();
+    } catch (error) {
+      // Handle potential errors, such as network request failures
+      print('Error initializing data: $error');
+    } finally {
+      // Update the email and isLoading state after operations are complete
+      setState(() {
+        email = widget.email;
+        isLoading = false;
+      });
+    }
+  }
+
+  void _startAutoScroll() {
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (curIndex < _numItems - 1) {
+        curIndex++;
+        _controller.animateTo(
+          curIndex * 100.0, // Adjust the item height as needed
+          duration: _animationDuration,
+          curve: Curves.easeInOut,
+        );
+      } else {
+        curIndex = 0;
+        _controller.jumpTo(0.0);
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<List<Map<String, dynamic>>> fetchTripItinerary() async {
@@ -204,24 +245,24 @@ class _Home extends State<HomeScreen> {
     } catch (e) {
       error_dialogue_box(context, e.toString());
     }
-
-    //   UploadTask uploadTask = FirebaseStorage.instance
-    //       .ref()
-    //       .child("profilepictures")
-    //       .child(const Uuid().v1())
-    //       .putFile(profilePic!);
-    //   print(docid);
-    //   TaskSnapshot taskSnapshot = await uploadTask;
-    //   String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-    //   await FirebaseFirestore.instance
-    //       .collection("tourists")
-    //       .doc(docid)
-    //       .update({"profilepic": downloadUrl});
-    //   await FirebaseFirestore.instance
-    //       .collection("tourists")
-    //       .doc(docid)
-    //       .update({"profilepic": "helllo"});
   }
+
+  //   UploadTask uploadTask = FirebaseStorage.instance
+  //       .ref()
+  //       .child("profilepictures")
+  //       .child(const Uuid().v1())
+  //       .putFile(profilePic!);
+  //   print(docid);
+  //   TaskSnapshot taskSnapshot = await uploadTask;
+  //   String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+  //   await FirebaseFirestore.instance
+  //       .collection("tourists")
+  //       .doc(docid)
+  //       .update({"profilepic": downloadUrl});
+  //   await FirebaseFirestore.instance
+  //       .collection("tourists")
+  //       .doc(docid)
+  //       .update({"profilepic": "helllo"});
 
   void uploadImage() async {
     try {
@@ -247,686 +288,693 @@ class _Home extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: backgroundColor(),
       resizeToAvoidBottomInset: true,
-      body: FutureBuilder<String>(
-          future: getUserData(),
-          builder: (context, snapshot) {
-            // if (snapshot.connectionState == ConnectionState.waiting) {
-            //   return const Center(
-            //       child:
-            //           CircularProgressIndicator()); // Show a loading indicator while fetching data
-            // } else {
-            return SafeArea(
-              child: IndexedStack(
-                index: _currentIndex,
-                children: [
-                  // Home Page
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(
-                            top: 10, right: 0, bottom: 0, left: 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 5),
-                              child: Container(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 10),
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(5.0),
-                                  color: AppBarBackground(),
-                                  shape: BoxShape.rectangle,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      "Hello, ${name}",
-                                      style: TextStyle(
-                                        color: button1(),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 25,
+      body: isLoading
+          ? const Center(
+              child:
+                  CircularProgressIndicator()) // Show loading indicator while loading
+          : FutureBuilder<String>(
+              future: getUserData(),
+              builder: (context, snapshot) {
+                // if (snapshot.connectionState == ConnectionState.waiting) {
+                //   return const Center(
+                //       child:
+                //           CircularProgressIndicator()); // Show a loading indicator while fetching data
+                // } else {
+                return IndexedStack(
+                  index: _currentIndex,
+                  children: [
+                    // Home Page
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              top: 10, right: 0, bottom: 0, left: 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 5),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5.0),
+                                    color: AppBarBackground(),
+                                    shape: BoxShape.rectangle,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        overflow: TextOverflow.ellipsis,
+                                        "Hello, ${name}",
+                                        style: TextStyle(
+                                          color: button1(),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 25,
+                                        ),
                                       ),
-                                    ),
-                                    Stack(
-                                      children: [
-                                        profileURL != ""
-                                            ? CircleAvatar(
-                                                radius: 35,
-                                                backgroundImage:
-                                                    NetworkImage(profileURL),
-                                              )
-                                            : const CircleAvatar(
-                                                radius: 35,
-                                                backgroundImage: NetworkImage(
-                                                    'https://static.vecteezy.com/system/resources/thumbnails/005/544/718/small/profile-icon-design-free-vector.jpg'),
-                                              ),
-                                        profileURL != ''
-                                            ? const Text('')
-                                            : Positioned(
-                                                bottom: -12,
-                                                left: 35,
-                                                child: Material(
-                                                  color: Colors
-                                                      .transparent, // Keep the Material widget transparent
-                                                  child: InkWell(
-                                                    onTap: uploadImage,
-                                                    child: Container(
-                                                      width:
-                                                          48, // Increase the width for a larger touch area
-                                                      height:
-                                                          48, // Increase the height for a larger touch area
-                                                      alignment:
-                                                          Alignment.center,
-                                                      child: const Icon(
-                                                          Icons
-                                                              .add_a_photo_rounded,
-                                                          size: 24.0),
+                                      Stack(
+                                        children: [
+                                          profileURL != ""
+                                              ? CircleAvatar(
+                                                  radius: 30,
+                                                  backgroundImage:
+                                                      NetworkImage(profileURL),
+                                                )
+                                              : const CircleAvatar(
+                                                  radius: 35,
+                                                  backgroundImage: NetworkImage(
+                                                      'https://static.vecteezy.com/system/resources/thumbnails/005/544/718/small/profile-icon-design-free-vector.jpg'),
+                                                ),
+                                          profileURL != ''
+                                              ? const Text('')
+                                              : Positioned(
+                                                  bottom: -12,
+                                                  left: 35,
+                                                  child: Material(
+                                                    color: Colors
+                                                        .transparent, // Keep the Material widget transparent
+                                                    child: InkWell(
+                                                      onTap: uploadImage,
+                                                      child: Container(
+                                                        width:
+                                                            48, // Increase the width for a larger touch area
+                                                        height:
+                                                            48, // Increase the height for a larger touch area
+                                                        alignment:
+                                                            Alignment.center,
+                                                        child: const Icon(
+                                                            Icons
+                                                                .add_a_photo_rounded,
+                                                            size: 24.0),
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                      ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 10),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    prefixIcon: const Icon(
+                                      Icons.search,
+                                      size: 25,
+                                      color: Colors.grey,
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 10),
-                              child: TextFormField(
-                                decoration: InputDecoration(
-                                  prefixIcon: const Icon(
-                                    Icons.search,
-                                    size: 25,
-                                    color: Colors.grey,
+                                    disabledBorder: const OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                          color: Colors.grey,
+                                          style: BorderStyle.solid),
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(10)),
+                                    ),
+                                    enabledBorder: const OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                          color: Colors.grey,
+                                          style: BorderStyle.solid),
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(10)),
+                                    ),
+                                    labelText:
+                                        'Search country, city, or any place',
+                                    labelStyle: TextStyle(
+                                      color: button1(),
+                                      fontSize: 16,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                    border: const OutlineInputBorder(),
+                                    filled: true,
+                                    fillColor: Colors.white,
                                   ),
-                                  disabledBorder: const OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        color: Colors.grey,
-                                        style: BorderStyle.solid),
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(10)),
-                                  ),
-                                  enabledBorder: const OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        color: Colors.grey,
-                                        style: BorderStyle.solid),
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(10)),
-                                  ),
-                                  labelText:
-                                      'Search country, city, or any place',
-                                  labelStyle: TextStyle(
-                                    color: button1(),
-                                    fontSize: 16,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                  border: const OutlineInputBorder(),
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 5),
-                        height: 70,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NewTrip(
-                                  createdBy: widget.email,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: button1(),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                            padding: const EdgeInsets.all(16.0),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              const Text(
-                                "Start a Trip",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 22,
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {},
-                                icon: const Icon(
-                                  Icons.arrow_circle_right_outlined,
-                                  size: 40,
-                                  color: Colors.white,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                      Padding(
-                          padding: const EdgeInsets.only(top: 10, bottom: 20),
-                          child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _buildCircleButton(
-                                    icon: Icons.home_outlined,
-                                    label: "Hotels",
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => HotelScreen(),
-                                        ),
-                                      );
-                                    }),
-                                _buildCircleButton(
-                                    icon: Icons.car_rental_outlined,
-                                    label: "Transport",
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => Transport(),
-                                        ),
-                                      );
-                                    }),
-                                _buildCircleButton(
-                                    icon: Icons.tour_outlined,
-                                    label: "Local Guide",
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => LocalGuide(),
-                                        ),
-                                      );
-                                    }),
-                              ])),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              "Popular Places",
-                              style: TextStyle(
-                                color: button1(),
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            // FutureBuilder<List<String>>(
-                            //     future: getWebsiteData(),
-                            //     builder: (context, snapshot) {
-                            //       return SizedBox(
-                            //         height: 150,
-                            //         child: ListView.builder(
-                            //           scrollDirection: Axis.horizontal,
-                            //           itemCount: popPlaces.length,
-                            //           itemBuilder:
-                            //               (BuildContext context, int index) {
-                            //             final names = popPlaces[index];
-                            //             final url = placeURLs[index];
-                            //             return Container(
-                            //               decoration: BoxDecoration(
-                            //                 borderRadius:
-                            //                     BorderRadius.circular(10.0),
-                            //                 // image: DecorationImage(
-                            //                 //   image: NetworkImage(url),
-                            //                 //   fit: BoxFit.cover,
-                            //                 // ),
-                            //               ),
-                            //               child: Center(child: Text(names)),
-                            //               width:
-                            //                   250.0, // Adjust the width as needed
-                            //               margin: const EdgeInsets.all(8.0),
-                            //             );
-                            //           },
-                            //         ),
-                            //       );
-                            //     }),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Center(
-                    child: Text("Groups"),
-                  ),
-                  const Center(
-                    child: Text("Groups"),
-                  ),
-                  Scaffold(
-                    appBar: AppBar(
-                      title: Text(
-                        "My Trips",
-                        style: AppBarTextStyle(),
-                      ),
-                      backgroundColor: AppBarBackground(),
-                      centerTitle: true,
-                      actions: [
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 5),
+                          height: 70,
+                          child: ElevatedButton(
+                            onPressed: () {
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          NewTrip(createdBy: widget.email)));
-                            });
-                          },
-                          icon: const Icon(Icons.add_card),
-                          iconSize: 35,
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NewTrip(
+                                    createdBy: widget.email,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: button1(),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                              padding: const EdgeInsets.all(16.0),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "Start a Trip",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 22,
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {},
+                                  icon: const Icon(
+                                    Icons.arrow_circle_right_outlined,
+                                    size: 40,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Padding(
+                            padding: const EdgeInsets.only(top: 10, bottom: 20),
+                            child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _buildCircleButton(
+                                      icon: Icons.home_outlined,
+                                      label: "Hotels",
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => HotelScreen(),
+                                          ),
+                                        );
+                                      }),
+                                  _buildCircleButton(
+                                      icon: Icons.car_rental_outlined,
+                                      label: "Transport",
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => Transport(),
+                                          ),
+                                        );
+                                      }),
+                                  _buildCircleButton(
+                                      icon: Icons.tour_outlined,
+                                      label: "Local Guide",
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => LocalGuide(),
+                                          ),
+                                        );
+                                      }),
+                                ])),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                "     Popular Places",
+                                style: TextStyle(
+                                  color: button1(),
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(
+                                height: 150,
+                                child: ListView.builder(
+                                  controller: _controller,
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: placeURLs.length,
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
+                                    final names = popPlaces[index];
+                                    final url = placeURLs[index];
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                        image: DecorationImage(
+                                          image: NetworkImage(url),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      width:
+                                          250.0, // Adjust the width as needed
+                                      margin: const EdgeInsets.all(8.0),
+                                      child: Center(
+                                          child: Text(
+                                        names,
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                      )),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    body: FutureBuilder<List<Map<String, dynamic>>>(
-                      future: fetchTripItinerary(),
-                      builder: (context, snapshot) {
-                        // if (snapshot.connectionState ==
-                        //     ConnectionState.waiting) {
-                        //   return const Center(
-                        //       child: CircularProgressIndicator());
-                        // } else if (snapshot.hasError) {
-                        //   return Center(
-                        //       child: Text('Error: ${snapshot.error}'));
-                        // } else if (!snapshot.hasData ||
-                        //     snapshot.data!.isEmpty) {
-                        //   return const Center(child: Text('No data available'));
-                        // } else {
-                        return GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2, // Two items per row
-                          ),
-                          itemCount: snapshot.data!.length,
-                          itemBuilder: (context, index) {
-                            var trip = snapshot.data![index];
-                            return Container(
-                              margin: const EdgeInsets.all(8.0),
-                              decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  image: NetworkImage(trip['pictureUrl']),
-                                  fit: BoxFit.cover,
-                                ),
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              child: Stack(
-                                children: [
-                                  Positioned(
-                                    top: 10,
-                                    left: 10,
-                                    child: Text(
-                                      trip['tripName'],
-                                      style: TextStyle(
-                                        fontSize: 25,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        backgroundColor:
-                                            Colors.black.withOpacity(0.5),
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 60,
-                                    left: 10,
-                                    child: Text(
-                                      trip['createdBy'] == name
-                                          ? "By You"
-                                          : 'By ${trip['createdBy']}',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.white,
-                                        backgroundColor:
-                                            Colors.black.withOpacity(0.5),
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    right: 10,
-                                    bottom: 10,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        trip['createdBy'] == name
-                                            ? Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        TripScreen(
-                                                          tripName:
-                                                              trip['tripName'],
-                                                        )))
-                                            : Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        ViewTrip(
-                                                          tripName:
-                                                              trip['tripName'],
-                                                        )));
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        backgroundColor:
-                                            button1(), // Button text color
-                                      ),
-                                      child: trip['createdBy'] == name
-                                          ? const Text("Edit Trip")
-                                          : const Text("View Trip"),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
+                    const Center(
+                      child: Text("Groups"),
                     ),
-                  ),
-                  Center(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(width: 400, height: 30),
-                          Stack(children: [
-                            profileURL != null
-                                ? CircleAvatar(
-                                    radius: 35,
-                                    backgroundImage: NetworkImage(profileURL),
-                                  )
-                                : const CircleAvatar(
-                                    radius: 35,
-                                    backgroundImage: NetworkImage(
-                                        'https://static.vecteezy.com/system/resources/thumbnails/005/544/718/small/profile-icon-design-free-vector.jpg')),
-                            Positioned(
-                                bottom: -12,
-                                left: 35,
-                                child: IconButton(
-                                    color: Colors.black,
-                                    icon: const Icon(Icons.add_a_photo_rounded),
-                                    onPressed: uploadImage)),
-                          ]),
-                          const SizedBox(width: 400, height: 10),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              width: name!.length * 8 + 60,
-                              alignment: Alignment.center,
-                              child: TextField(
-                                onTap: () {
-                                  setState(() {
-                                    editName = true;
-                                  });
-                                },
-                                onTapOutside: (text) {
-                                  setState(() {
-                                    editName = false;
-                                  });
-                                  updateName(nameController.text);
-                                },
-                                readOnly: false,
-                                autofocus: editName,
-                                controller: nameController,
-                                // Allow the TextField to expand vertically based on content
-                                decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    suffixIcon: Icon(Icons.edit)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 400, height: 15),
-                          TextButton.icon(
-                              style: ButtonStyle(
-                                alignment: Alignment.centerLeft,
-                                fixedSize: MaterialStateProperty.all<Size>(
-                                    const Size(300, 50.0)),
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        Colors.transparent),
-                                shape:
-                                    MaterialStateProperty.all<OutlinedBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10.0), // Adjust the radius as needed
-                                    side: const BorderSide(
-                                        color: Color.fromRGBO(48, 55, 72,
-                                            1.00)), // Set the border color
-                                  ),
-                                ),
-                              ),
-                              onPressed: () {},
-                              icon: const Icon(
-                                Icons.email,
-                                color: Colors.black,
-                                size: 33,
-                              ),
-                              label: Text("${widget.email}",
-                                  style: const TextStyle(
-                                      color: Color.fromRGBO(48, 55, 72, 1.0),
-                                      fontSize: 20,
-                                      overflow: TextOverflow.clip))),
-                          const SizedBox(width: 400, height: 15),
-                          TextButton.icon(
-                              style: ButtonStyle(
-                                alignment: Alignment.centerLeft,
-                                fixedSize: MaterialStateProperty.all<Size>(
-                                    const Size(300, 50.0)),
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        Colors.transparent),
-                                shape:
-                                    MaterialStateProperty.all<OutlinedBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10.0), // Adjust the radius as needed
-                                    side: const BorderSide(
-                                        color: Color.fromRGBO(48, 55, 72,
-                                            1.00)), // Set the border color
-                                  ),
-                                ),
-                              ),
-                              onPressed: () {},
-                              icon: const Icon(
-                                Icons.phone,
-                                color: Colors.black,
-                                size: 33,
-                              ),
-                              label: Text("${mobileNumber}",
-                                  style: const TextStyle(
-                                      color: Color.fromRGBO(48, 55, 72, 1.0),
-                                      fontSize: 20,
-                                      overflow: TextOverflow.clip))),
-                          const SizedBox(width: 400, height: 15),
-                          TextButton.icon(
-                              style: ButtonStyle(
-                                alignment: Alignment.centerLeft,
-                                fixedSize: MaterialStateProperty.all<Size>(
-                                    const Size(300, 50.0)),
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        Colors.transparent),
-                                shape:
-                                    MaterialStateProperty.all<OutlinedBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10.0), // Adjust the radius as needed
-                                    side: const BorderSide(
-                                        color: Color.fromRGBO(48, 55, 72,
-                                            1.00)), // Set the border color
-                                  ),
-                                ),
-                              ),
-                              onPressed: () {},
-                              icon: const Icon(
-                                Icons.pending_actions_outlined,
-                                color: Colors.black,
-                                size: 33,
-                              ),
-                              label: const Text("My Trips",
-                                  style: TextStyle(
-                                      color: Color.fromRGBO(48, 55, 72, 1.0),
-                                      fontSize: 20,
-                                      overflow: TextOverflow.clip))),
-                          const SizedBox(width: 400, height: 15),
-                          TextButton.icon(
-                              style: ButtonStyle(
-                                alignment: Alignment.centerLeft,
-                                fixedSize: MaterialStateProperty.all<Size>(
-                                    const Size(300, 50.0)),
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        Colors.transparent),
-                                shape:
-                                    MaterialStateProperty.all<OutlinedBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10.0), // Adjust the radius as needed
-                                    side: const BorderSide(
-                                        color: Color.fromRGBO(48, 55, 72,
-                                            1.00)), // Set the border color
-                                  ),
-                                ),
-                              ),
-                              onPressed: () {},
-                              icon: const Icon(
-                                Icons.payment_rounded,
-                                color: Colors.black,
-                                size: 33,
-                              ),
-                              label: const Text("Payments",
-                                  style: TextStyle(
-                                      color: Color.fromRGBO(48, 55, 72, 1.0),
-                                      fontSize: 20,
-                                      overflow: TextOverflow.clip))),
-                          const SizedBox(width: 400, height: 15),
-                          TextButton.icon(
-                              style: ButtonStyle(
-                                alignment: Alignment.centerLeft,
-                                fixedSize: MaterialStateProperty.all<Size>(
-                                    const Size(300, 50.0)),
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        Colors.transparent),
-                                shape:
-                                    MaterialStateProperty.all<OutlinedBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10.0), // Adjust the radius as needed
-                                    side: const BorderSide(
-                                        color: Color.fromRGBO(48, 55, 72,
-                                            1.00)), // Set the border color
-                                  ),
-                                ),
-                              ),
-                              onPressed: () {},
-                              icon: const Icon(
-                                Icons.book_online_outlined,
-                                color: Colors.black,
-                                size: 33,
-                              ),
-                              label: const Text("My Bookings",
-                                  style: TextStyle(
-                                      color: Color.fromRGBO(48, 55, 72, 1.0),
-                                      fontSize: 20,
-                                      overflow: TextOverflow.clip))),
-                          const SizedBox(width: 400, height: 15),
-                          TextButton.icon(
-                              style: ButtonStyle(
-                                alignment: Alignment.centerLeft,
-                                fixedSize: MaterialStateProperty.all<Size>(
-                                    const Size(300, 50.0)),
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        Colors.transparent),
-                                shape:
-                                    MaterialStateProperty.all<OutlinedBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10.0), // Adjust the radius as needed
-                                    side: const BorderSide(
-                                        color: Color.fromRGBO(48, 55, 72,
-                                            1.00)), // Set the border color
-                                  ),
-                                ),
-                              ),
-                              onPressed: () {},
-                              icon: const Icon(
-                                Icons.monochrome_photos_outlined,
-                                color: Colors.black,
-                                size: 33,
-                              ),
-                              label: const Text("Posts",
-                                  style: TextStyle(
-                                      color: Color.fromRGBO(48, 55, 72, 1.0),
-                                      fontSize: 20,
-                                      overflow: TextOverflow.clip))),
-                          const SizedBox(width: 400, height: 15),
-                          TextButton.icon(
-                              style: ButtonStyle(
-                                alignment: Alignment.centerLeft,
-                                fixedSize: MaterialStateProperty.all<Size>(
-                                    const Size(300, 50.0)),
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        Colors.transparent),
-                                shape:
-                                    MaterialStateProperty.all<OutlinedBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        10.0), // Adjust the radius as needed
-                                    side: const BorderSide(
-                                        color: Color.fromRGBO(48, 55, 72,
-                                            1.00)), // Set the border color
-                                  ),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.popUntil(
-                                    context, (route) => route.isFirst);
-                                Navigator.pushReplacement(
+                    const Center(
+                      child: Text("Groups"),
+                    ),
+                    Scaffold(
+                      appBar: AppBar(
+                        title: Text(
+                          "My Trips",
+                          style: AppBarTextStyle(),
+                        ),
+                        backgroundColor: AppBarBackground(),
+                        centerTitle: true,
+                        actions: [
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) =>
-                                            const LoginPage()));
-                              },
-                              icon: const Icon(
-                                Icons.logout,
-                                color: Colors.black,
-                                size: 33,
-                              ),
-                              label: const Text("Logout",
-                                  style: TextStyle(
-                                      color: Color.fromRGBO(48, 55, 72, 1.0),
-                                      fontSize: 20,
-                                      overflow: TextOverflow.clip))),
+                                            NewTrip(createdBy: widget.email)));
+                              });
+                            },
+                            icon: const Icon(Icons.add_card),
+                            iconSize: 35,
+                          ),
                         ],
                       ),
+                      body: FutureBuilder<List<Map<String, dynamic>>>(
+                        future: fetchTripItinerary(),
+                        builder: (context, snapshot) {
+                          // if (snapshot.connectionState ==
+                          //     ConnectionState.waiting) {
+                          //   return const Center(
+                          //       child: CircularProgressIndicator());
+                          // } else if (snapshot.hasError) {
+                          //   return Center(
+                          //       child: Text('Error: ${snapshot.error}'));
+                          // } else if (!snapshot.hasData ||
+                          //     snapshot.data!.isEmpty) {
+                          //   return const Center(child: Text('No data available'));
+                          // } else {
+                          return GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2, // Two items per row
+                            ),
+                            itemCount: snapshot.data!.length,
+                            itemBuilder: (context, index) {
+                              var trip = snapshot.data![index];
+                              return Container(
+                                margin: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: NetworkImage(trip['pictureUrl']),
+                                    fit: BoxFit.cover,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10.0),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      top: 10,
+                                      left: 10,
+                                      child: Text(
+                                        trip['tripName'],
+                                        style: TextStyle(
+                                          fontSize: 25,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          backgroundColor:
+                                              Colors.black.withOpacity(0.5),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 60,
+                                      left: 10,
+                                      child: Text(
+                                        trip['createdBy'] == name
+                                            ? "By You"
+                                            : 'By ${trip['createdBy']}',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.white,
+                                          backgroundColor:
+                                              Colors.black.withOpacity(0.5),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      right: 10,
+                                      bottom: 10,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          trip['createdBy'] == name
+                                              ? Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          TripScreen(
+                                                            tripName: trip[
+                                                                'tripName'],
+                                                          )))
+                                              : Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          ViewTrip(
+                                                            tripName: trip[
+                                                                'tripName'],
+                                                          )));
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor:
+                                              button1(), // Button text color
+                                        ),
+                                        child: trip['createdBy'] == name
+                                            ? const Text("Edit Trip")
+                                            : const Text("View Trip"),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                    Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(width: 400, height: 30),
+                            Stack(children: [
+                              profileURL != null
+                                  ? CircleAvatar(
+                                      radius: 35,
+                                      backgroundImage: NetworkImage(profileURL),
+                                    )
+                                  : const CircleAvatar(
+                                      radius: 35,
+                                      backgroundImage: NetworkImage(
+                                          'https://static.vecteezy.com/system/resources/thumbnails/005/544/718/small/profile-icon-design-free-vector.jpg')),
+                              Positioned(
+                                  bottom: -12,
+                                  left: 35,
+                                  child: IconButton(
+                                      color: Colors.black,
+                                      icon:
+                                          const Icon(Icons.add_a_photo_rounded),
+                                      onPressed: uploadImage)),
+                            ]),
+                            const SizedBox(width: 400, height: 10),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Container(
+                                width: name.length * 8 + 60,
+                                alignment: Alignment.center,
+                                child: TextField(
+                                  onTap: () {
+                                    setState(() {
+                                      editName = true;
+                                    });
+                                  },
+                                  onTapOutside: (text) {
+                                    setState(() {
+                                      editName = false;
+                                    });
+                                    updateName(nameController.text);
+                                  },
+                                  readOnly: false,
+                                  autofocus: editName,
+                                  controller: nameController,
+                                  // Allow the TextField to expand vertically based on content
+                                  decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      suffixIcon: Icon(Icons.edit)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 400, height: 15),
+                            TextButton.icon(
+                                style: ButtonStyle(
+                                  alignment: Alignment.centerLeft,
+                                  fixedSize: MaterialStateProperty.all<Size>(
+                                      const Size(300, 50.0)),
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.transparent),
+                                  shape:
+                                      MaterialStateProperty.all<OutlinedBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          10.0), // Adjust the radius as needed
+                                      side: const BorderSide(
+                                          color: Color.fromRGBO(48, 55, 72,
+                                              1.00)), // Set the border color
+                                    ),
+                                  ),
+                                ),
+                                onPressed: () {},
+                                icon: const Icon(
+                                  Icons.email,
+                                  color: Colors.black,
+                                  size: 33,
+                                ),
+                                label: Text("${widget.email}",
+                                    style: const TextStyle(
+                                        color: Color.fromRGBO(48, 55, 72, 1.0),
+                                        fontSize: 20,
+                                        overflow: TextOverflow.clip))),
+                            const SizedBox(width: 400, height: 15),
+                            TextButton.icon(
+                                style: ButtonStyle(
+                                  alignment: Alignment.centerLeft,
+                                  fixedSize: MaterialStateProperty.all<Size>(
+                                      const Size(300, 50.0)),
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.transparent),
+                                  shape:
+                                      MaterialStateProperty.all<OutlinedBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          10.0), // Adjust the radius as needed
+                                      side: const BorderSide(
+                                          color: Color.fromRGBO(48, 55, 72,
+                                              1.00)), // Set the border color
+                                    ),
+                                  ),
+                                ),
+                                onPressed: () {},
+                                icon: const Icon(
+                                  Icons.phone,
+                                  color: Colors.black,
+                                  size: 33,
+                                ),
+                                label: Text("${mobileNumber}",
+                                    style: const TextStyle(
+                                        color: Color.fromRGBO(48, 55, 72, 1.0),
+                                        fontSize: 20,
+                                        overflow: TextOverflow.clip))),
+                            const SizedBox(width: 400, height: 15),
+                            TextButton.icon(
+                                style: ButtonStyle(
+                                  alignment: Alignment.centerLeft,
+                                  fixedSize: MaterialStateProperty.all<Size>(
+                                      const Size(300, 50.0)),
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.transparent),
+                                  shape:
+                                      MaterialStateProperty.all<OutlinedBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          10.0), // Adjust the radius as needed
+                                      side: const BorderSide(
+                                          color: Color.fromRGBO(48, 55, 72,
+                                              1.00)), // Set the border color
+                                    ),
+                                  ),
+                                ),
+                                onPressed: () {},
+                                icon: const Icon(
+                                  Icons.pending_actions_outlined,
+                                  color: Colors.black,
+                                  size: 33,
+                                ),
+                                label: const Text("My Trips",
+                                    style: TextStyle(
+                                        color: Color.fromRGBO(48, 55, 72, 1.0),
+                                        fontSize: 20,
+                                        overflow: TextOverflow.clip))),
+                            const SizedBox(width: 400, height: 15),
+                            TextButton.icon(
+                                style: ButtonStyle(
+                                  alignment: Alignment.centerLeft,
+                                  fixedSize: MaterialStateProperty.all<Size>(
+                                      const Size(300, 50.0)),
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.transparent),
+                                  shape:
+                                      MaterialStateProperty.all<OutlinedBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          10.0), // Adjust the radius as needed
+                                      side: const BorderSide(
+                                          color: Color.fromRGBO(48, 55, 72,
+                                              1.00)), // Set the border color
+                                    ),
+                                  ),
+                                ),
+                                onPressed: () {},
+                                icon: const Icon(
+                                  Icons.payment_rounded,
+                                  color: Colors.black,
+                                  size: 33,
+                                ),
+                                label: const Text("Payments",
+                                    style: TextStyle(
+                                        color: Color.fromRGBO(48, 55, 72, 1.0),
+                                        fontSize: 20,
+                                        overflow: TextOverflow.clip))),
+                            const SizedBox(width: 400, height: 15),
+                            TextButton.icon(
+                                style: ButtonStyle(
+                                  alignment: Alignment.centerLeft,
+                                  fixedSize: MaterialStateProperty.all<Size>(
+                                      const Size(300, 50.0)),
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.transparent),
+                                  shape:
+                                      MaterialStateProperty.all<OutlinedBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          10.0), // Adjust the radius as needed
+                                      side: const BorderSide(
+                                          color: Color.fromRGBO(48, 55, 72,
+                                              1.00)), // Set the border color
+                                    ),
+                                  ),
+                                ),
+                                onPressed: () {},
+                                icon: const Icon(
+                                  Icons.book_online_outlined,
+                                  color: Colors.black,
+                                  size: 33,
+                                ),
+                                label: const Text("My Bookings",
+                                    style: TextStyle(
+                                        color: Color.fromRGBO(48, 55, 72, 1.0),
+                                        fontSize: 20,
+                                        overflow: TextOverflow.clip))),
+                            const SizedBox(width: 400, height: 15),
+                            TextButton.icon(
+                                style: ButtonStyle(
+                                  alignment: Alignment.centerLeft,
+                                  fixedSize: MaterialStateProperty.all<Size>(
+                                      const Size(300, 50.0)),
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.transparent),
+                                  shape:
+                                      MaterialStateProperty.all<OutlinedBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          10.0), // Adjust the radius as needed
+                                      side: const BorderSide(
+                                          color: Color.fromRGBO(48, 55, 72,
+                                              1.00)), // Set the border color
+                                    ),
+                                  ),
+                                ),
+                                onPressed: () {},
+                                icon: const Icon(
+                                  Icons.monochrome_photos_outlined,
+                                  color: Colors.black,
+                                  size: 33,
+                                ),
+                                label: const Text("Posts",
+                                    style: TextStyle(
+                                        color: Color.fromRGBO(48, 55, 72, 1.0),
+                                        fontSize: 20,
+                                        overflow: TextOverflow.clip))),
+                            const SizedBox(width: 400, height: 15),
+                            TextButton.icon(
+                                style: ButtonStyle(
+                                  alignment: Alignment.centerLeft,
+                                  fixedSize: MaterialStateProperty.all<Size>(
+                                      const Size(300, 50.0)),
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.transparent),
+                                  shape:
+                                      MaterialStateProperty.all<OutlinedBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          10.0), // Adjust the radius as needed
+                                      side: const BorderSide(
+                                          color: Color.fromRGBO(48, 55, 72,
+                                              1.00)), // Set the border color
+                                    ),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.popUntil(
+                                      context, (route) => route.isFirst);
+                                  Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const LoginPage()));
+                                },
+                                icon: const Icon(
+                                  Icons.logout,
+                                  color: Colors.black,
+                                  size: 33,
+                                ),
+                                label: const Text("Logout",
+                                    style: TextStyle(
+                                        color: Color.fromRGBO(48, 55, 72, 1.0),
+                                        fontSize: 20,
+                                        overflow: TextOverflow.clip))),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
       bottomNavigationBar: BottomNavigationBar(
         items: [
           BottomNavigationBarItem(

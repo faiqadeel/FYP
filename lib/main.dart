@@ -67,55 +67,56 @@
 //         //       ),
 //         //     ))
 
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:is_first_run/is_first_run.dart';
+import 'package:my_app/firebase_options.dart';
 
-import 'Service Providers/Screens/HotelOwner.dart';
+import 'user_management/Home_Page.dart';
 
 void main() async {
-  // Initialize Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  runApp(MyApp());
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({
-    super.key,
-  });
+  const MyApp({super.key});
 
-  Future<bool> isFirst() async {
-    bool first = await IsFirstRun.isFirstRun();
-    return first;
+  Future<bool> isFirstRun() async {
+    // This function should asynchronously determine if this is the first run of the app.
+    // Placeholder logic here, replace it with your actual check.
+    return await IsFirstRun.isFirstRun();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        theme: ThemeData(
-          textTheme: GoogleFonts.aBeeZeeTextTheme(),
-        ),
-        debugShowCheckedModeBanner: false,
-        // home:
-
-        home: HotelOwner(provider_id: "03405794447")
-        // isFirst == false ? const LoginPage() : const SignUpPage()
-        // LocalGuide()
-        // isFirstTime ? const SignUpPage() : const LoginPage(),
-        );
+      theme: ThemeData(
+        textTheme: GoogleFonts.aBeeZeeTextTheme(),
+      ),
+      debugShowCheckedModeBanner: false,
+      home: FutureBuilder<bool>(
+        future: isFirstRun(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            // if (snapshot.data ?? true) {
+            //   // If true, navigate to the SignUpPage
+            //   return const SignUpPage();
+            // } else {
+            //   // Otherwise, navigate to the LoginPage
+            //   return const LoginPage();
+            // }
+            // return scrollableGridExample();
+            // return HomeScreen(email: "faiq12@gmail.com");
+            return const HomeScreen(email: "faiq12@gmail.com");
+          } else {
+            // While checking, show a loading spinner or similar widget
+            return const CircularProgressIndicator();
+          }
+        },
+      ),
+    );
   }
-}
-
-// Method to check if it's the user's first sign-in
-Future<bool> isFirstSignIn() async {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
-    await user.reload();
-    UserMetadata metadata = user.metadata;
-    return metadata.creationTime == metadata.lastSignInTime;
-  }
-  return false; // Return false if user is not signed in
 }

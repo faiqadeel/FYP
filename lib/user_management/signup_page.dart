@@ -1,5 +1,7 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_app/components/dialogBox.dart';
 import 'package:my_app/components/iconComponents.dart';
 import 'package:my_app/components/textFieldComponent.dart';
@@ -17,17 +19,16 @@ class SignUpPage extends StatefulWidget {
 class SignUp extends State<SignUpPage> {
   final _Signupformfield = GlobalKey<FormState>();
   TextEditingController nameController = TextEditingController();
-  TextEditingController usernameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController passwordAgainController = TextEditingController();
   TextEditingController numberController = TextEditingController();
   bool _obscureText = true;
   bool _obscureText1 = true;
+  bool isLoading = false;
 
   void createAccount(BuildContext context) async {
     String name = nameController.text.trim();
-    String username = usernameController.text.trim();
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
     String cpassword = passwordAgainController.text.trim();
@@ -43,6 +44,9 @@ class SignUp extends State<SignUpPage> {
       await _auth.verifyPhoneNumber(
           phoneNumber: phone,
           codeSent: (verificationId, forceResendingToken) {
+            setState(() {
+              isLoading = false;
+            });
             Navigator.popUntil(context, (route) => route.isFirst);
             Navigator.pushReplacement(
                 context,
@@ -55,18 +59,14 @@ class SignUp extends State<SignUpPage> {
                           password: password,
                         )));
           },
-          verificationCompleted: (credential) {
-            print('verified');
-          },
+          verificationCompleted: (credential) {},
           verificationFailed: (ex) {
-            error_dialogue_box(context, 'Verification Failed');
-            print('not verified');
+            error_dialogue_box(context, ex.toString());
           },
           codeAutoRetrievalTimeout: (String verificationId) {});
     }
 
     if (name == "" ||
-        username == "" ||
         email == "" ||
         password == "" ||
         cpassword == "" ||
@@ -87,7 +87,16 @@ class SignUp extends State<SignUpPage> {
     } else if (alphExp.hasMatch(number)) {
       error_dialogue_box(context, 'Number cannot contain alphabets');
     } else {
-      send_OTP();
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        error_dialogue_box(context,
+            "Your phone is not connected to the internet. Please check you connection and try again!!");
+      } else {
+        setState(() {
+          isLoading = true;
+        });
+        send_OTP();
+      }
     }
   }
 
@@ -107,214 +116,219 @@ class SignUp extends State<SignUpPage> {
       ),
       backgroundColor: const Color.fromRGBO(36, 63, 77, 1.0),
       resizeToAvoidBottomInset: true,
-      body: Center(
-        child: Form(
-          key: _Signupformfield,
-          child: ListView(
-            children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-                child: Center(
-                  child: Text(
-                    "TrekMates",
-                    style: TextStyle(color: Colors.white, fontSize: 25),
-                  ),
-                ),
-              ),
-              Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: TextField(
-                    style: const TextStyle(
-                      color: Color.fromRGBO(244, 241, 222, 1.0),
-                    ),
-                    controller: nameController,
-                    decoration: textFieldDecoration(
-                        './assets/icons/person_icon.png', 'Name'),
-                  )),
-              Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: TextField(
-                    style: const TextStyle(
-                        color: Color.fromRGBO(244, 241, 222, 1.0)),
-                    controller: usernameController,
-                    decoration: textFieldDecoration(
-                        "./assets/icons/person_icon.png", "Username"),
-                  )),
-              Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: TextFormField(
-                    style: const TextStyle(
-                        color: Color.fromRGBO(244, 241, 222, 1.0)),
-                    keyboardType: TextInputType.emailAddress,
-                    controller: emailController,
-                    decoration: textFieldDecoration(
-                        './assets/icons/mail_icon.png', "Email"),
-                  )),
-              Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: TextFormField(
-                    style: const TextStyle(
-                        color: Color.fromRGBO(244, 241, 222, 1.0)),
-                    keyboardType: TextInputType.number,
-                    controller: numberController,
-                    decoration: textFieldDecoration(
-                        './assets/icons/phone.png', "Phone Number"),
-                  )),
-              Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: TextField(
-                      style: const TextStyle(
-                          color: Color.fromRGBO(244, 241, 222, 1.0)),
-                      controller: passwordController,
-                      obscureText: _obscureText,
-                      decoration: InputDecoration(
-                          // prefixIcon: Icon(Icons),
-                          prefixIcon: prefixIcon("./assets/icons/pwd_icon.png"),
-                          suffixIcon: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  _obscureText = !_obscureText;
-                                });
-                              },
-                              icon: Icon(_obscureText
-                                  ? Icons.visibility
-                                  : Icons.visibility_off)),
-                          disabledBorder: const OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(10))),
-                          enabledBorder: const OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(10))),
-                          labelText: 'password',
-                          labelStyle: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                          ),
-                          border: const OutlineInputBorder(),
-                          filled: true,
-                          fillColor: const Color.fromRGBO(67, 99, 114, 1.0)))),
-              Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: TextField(
-                    style: const TextStyle(
-                        color: Color.fromRGBO(244, 241, 222, 1.0)),
-                    controller: passwordAgainController,
-                    obscureText: _obscureText1,
-                    decoration: InputDecoration(
-                        // prefixIcon: Icon(Icons),
-                        prefixIcon: prefixIcon("./assets/icons/pwd_icon.png"),
-                        suffixIcon: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                _obscureText1 = !_obscureText1;
-                              });
-                            },
-                            icon: Icon(_obscureText1
-                                ? Icons.visibility
-                                : Icons.visibility_off)),
-                        disabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide.none,
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10))),
-                        enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide.none,
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10))),
-                        labelText: 'password',
-                        labelStyle: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
-                        border: const OutlineInputBorder(),
-                        filled: true,
-                        fillColor: const Color.fromRGBO(67, 99, 114, 1.0)),
-                  )),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                child: SizedBox(
-                  width: 100,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      createAccount(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromRGBO(238, 30, 30, 1),
-                      fixedSize: const Size(100, 50),
-                    ),
-                    child: const Text(
-                      "Sign Up",
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Color.fromRGBO(244, 241, 222, 1.0),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Already have an account?',
-                        style: TextStyle(
-                          color: Color.fromRGBO(244, 241, 222, 1.0),
-                          fontSize: 14,
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+              color: Colors.white,
+            ))
+          : Center(
+              child: Form(
+                key: _Signupformfield,
+                child: ListView(
+                  children: [
+                    const Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                      child: Center(
+                        child: Text(
+                          "TrekMates",
+                          style: TextStyle(color: Colors.white, fontSize: 25),
                         ),
                       ),
-                      TextButton(
-                          onPressed: () => {
-                                Navigator.popUntil(
-                                    context, (route) => route.isFirst),
-                                Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const LoginPage()))
-                              },
-                          child: const Text(
-                            'LOGIN',
-                            style: TextStyle(
-                                color: Color.fromRGBO(244, 241, 222, 1.0),
-                                fontSize: 14),
-                          ))
-                    ],
-                  )),
-              Padding(
-                  padding: const EdgeInsets.only(left: 80),
-                  child: TextButton(
-                      onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                        Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const PhoneSignIn(
-                                      isVerified: false,
-                                    )));
-                      },
-                      child: const Text(
-                        'Signup as a Service Provider',
-                        style: TextStyle(
+                    ),
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        child: TextField(
+                          style: const TextStyle(
                             color: Color.fromRGBO(244, 241, 222, 1.0),
-                            fontSize: 18),
-                      ))),
-            ],
-          ),
-        ),
-      ),
+                          ),
+                          controller: nameController,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                                RegExp("[a-zA-Z]")),
+                          ],
+                          decoration: textFieldDecoration(
+                              './assets/icons/person_icon.png', 'Name'),
+                        )),
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        child: TextFormField(
+                          style: const TextStyle(
+                              color: Color.fromRGBO(244, 241, 222, 1.0)),
+                          keyboardType: TextInputType.emailAddress,
+                          controller: emailController,
+                          decoration: textFieldDecoration(
+                              './assets/icons/mail_icon.png', "Email"),
+                        )),
+                    Padding(
+                        padding:
+                            const EdgeInsets.only(left: 20, right: 20, top: 10),
+                        child: TextFormField(
+                          maxLength: 11,
+                          style: const TextStyle(
+                              color: Color.fromRGBO(244, 241, 222, 1.0)),
+                          keyboardType: TextInputType.number,
+                          controller: numberController,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))
+                          ],
+                          decoration: textFieldDecoration(
+                              './assets/icons/phone.png', "Phone Number"),
+                        )),
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        child: TextField(
+                            style: const TextStyle(
+                                color: Color.fromRGBO(244, 241, 222, 1.0)),
+                            controller: passwordController,
+                            obscureText: _obscureText,
+                            decoration: InputDecoration(
+                                // prefixIcon: Icon(Icons),
+                                prefixIcon:
+                                    prefixIcon("./assets/icons/pwd_icon.png"),
+                                suffixIcon: IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscureText = !_obscureText;
+                                      });
+                                    },
+                                    icon: Icon(_obscureText
+                                        ? Icons.visibility
+                                        : Icons.visibility_off)),
+                                disabledBorder: const OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(10))),
+                                enabledBorder: const OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(10))),
+                                labelText: 'password',
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                ),
+                                border: const OutlineInputBorder(),
+                                filled: true,
+                                fillColor:
+                                    const Color.fromRGBO(67, 99, 114, 1.0)))),
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        child: TextField(
+                          style: const TextStyle(
+                              color: Color.fromRGBO(244, 241, 222, 1.0)),
+                          controller: passwordAgainController,
+                          obscureText: _obscureText1,
+                          decoration: InputDecoration(
+                              // prefixIcon: Icon(Icons),
+                              prefixIcon:
+                                  prefixIcon("./assets/icons/pwd_icon.png"),
+                              suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureText1 = !_obscureText1;
+                                    });
+                                  },
+                                  icon: Icon(_obscureText1
+                                      ? Icons.visibility
+                                      : Icons.visibility_off)),
+                              disabledBorder: const OutlineInputBorder(
+                                  borderSide: BorderSide.none,
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(10))),
+                              enabledBorder: const OutlineInputBorder(
+                                  borderSide: BorderSide.none,
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(10))),
+                              labelText: 'password',
+                              labelStyle: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                              ),
+                              border: const OutlineInputBorder(),
+                              filled: true,
+                              fillColor:
+                                  const Color.fromRGBO(67, 99, 114, 1.0)),
+                        )),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 20),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          createAccount(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromRGBO(238, 30, 30, 1),
+                          fixedSize: const Size(100, 50),
+                        ),
+                        child: const Text(
+                          "Sign Up",
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Color.fromRGBO(244, 241, 222, 1.0),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Already have an account?',
+                              style: TextStyle(
+                                color: Color.fromRGBO(244, 241, 222, 1.0),
+                                fontSize: 14,
+                              ),
+                            ),
+                            TextButton(
+                                onPressed: () => {
+                                      Navigator.popUntil(
+                                          context, (route) => route.isFirst),
+                                      Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const LoginPage()))
+                                    },
+                                child: const Text(
+                                  'LOGIN',
+                                  style: TextStyle(
+                                      color: Color.fromRGBO(244, 241, 222, 1.0),
+                                      fontSize: 14),
+                                ))
+                          ],
+                        )),
+                    Padding(
+                        padding: const EdgeInsets.only(left: 1),
+                        child: TextButton(
+                            onPressed: () {
+                              Navigator.popUntil(
+                                  context, (route) => route.isFirst);
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const PhoneSignIn(
+                                            isVerified: false,
+                                          )));
+                            },
+                            child: const Text(
+                              'Signup as a Service Provider',
+                              style: TextStyle(
+                                  color: Color.fromRGBO(244, 241, 222, 1.0),
+                                  fontSize: 18),
+                            ))),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }

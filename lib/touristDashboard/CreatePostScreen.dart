@@ -1,8 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/components/Colors.dart';
+import 'package:my_app/components/dialogBox.dart';
 import 'package:my_app/components/textFieldComponent.dart';
 
 class CreatePost extends StatefulWidget {
@@ -14,6 +18,8 @@ class CreatePost extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePost> {
   File? _media;
+  XFile? postPhoto;
+  String imageUrl = "";
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -27,6 +33,47 @@ class _CreatePostScreenState extends State<CreatePost> {
     }
   }
 
+  Future<XFile> uploadImage() async {
+    XFile? _file;
+    try {
+      final ImagePicker _imgPicker = ImagePicker();
+      _file = await _imgPicker.pickImage(source: ImageSource.gallery);
+      if (_file != null) {
+        setState(() {
+          _media = File(_file!.path);
+        });
+      }
+      if (_file != null) {
+        Uint8List img = await _file.readAsBytes();
+      } else {
+        print("File is null");
+      }
+    } catch (e) {
+      print(e.toString());
+    }
+    return _file!;
+  }
+
+  void uploadPic(XFile image) async {
+    try {
+      Uint8List fileBytes = await image.readAsBytes();
+      Reference ref =
+          FirebaseStorage.instance.ref("Posts").child("${fileBytes[0]}");
+      TaskSnapshot task = await ref.putData(fileBytes);
+      String downloadurl = await task.ref.getDownloadURL();
+
+      String profileURL = downloadurl;
+
+      CollectionReference myCollection =
+          await FirebaseFirestore.instance.collection('Posts');
+
+      await myCollection
+          .add({"Media Url": profileURL, "Posted By": widget.name, "likes": 0});
+      success_dialogue_box(context, "Photo Posted Successfully!!");
+    } catch (e) {
+      error_dialogue_box(context, e.toString());
+    }
+  }
   // Future<void> _postToFirestore() async {
   //   if (_media != null && _descriptionController.text.isNotEmpty) {
   //     // Upload media to Firebase Storage
@@ -81,7 +128,12 @@ class _CreatePostScreenState extends State<CreatePost> {
                     height: 200,
                     child: Center(child: Text('No media selected'))),
             ElevatedButton(
-              onPressed: _pickMedia,
+              onPressed: () async {
+                setState(() async {
+                  postPhoto = await uploadImage();
+                });
+                await uploadImage();
+              },
               style: ElevatedButton.styleFrom(
                   backgroundColor: button1(), fixedSize: const Size(200, 50)),
               child: const Text(
@@ -106,7 +158,9 @@ class _CreatePostScreenState extends State<CreatePost> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                   backgroundColor: button1(), fixedSize: const Size(100, 40)),
-              onPressed: () {},
+              onPressed: () async {
+                uploadPic(postPhoto!);
+              },
               child: const Text('Post',
                   style: TextStyle(
                       color: Colors.white,

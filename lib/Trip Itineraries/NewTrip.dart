@@ -102,8 +102,8 @@ class _newTrip extends State<NewTrip> {
     String dest = destController.text.trim();
     String stop = stopsController.text.trim();
     List<String> stops = [stop];
-    if (name == "" || origin == "") {
-      highlightTextField();
+    if (name == "" || origin == "" || dest == "" || stop == "") {
+      error_dialogue_box(context, "Please fill out all the fields");
     } else {
       partners.toSet().toList();
       stops.toSet().toList();
@@ -177,109 +177,180 @@ class _newTrip extends State<NewTrip> {
                 "Trip name",
                 style: LabelTextStyle(),
               ),
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                    filled: true,
-                    fillColor: TextFieldBackground(),
-                    disabledBorder: const OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: Color.fromARGB(255, 61, 62, 65)),
-                        borderRadius: BorderRadius.all(Radius.circular(10))),
-                    enabledBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Color.fromARGB(255, 61, 62, 65), width: 0.0),
-                        borderRadius: BorderRadius.all(Radius.circular(10))),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: highlight
-                                ? Colors.red.shade900
-                                : const Color.fromARGB(255, 61, 62, 65)),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(10))),
-                    labelText: "E.g Summer Trip",
-                    labelStyle: const TextStyle(
-                      color: Color.fromRGBO(48, 55, 72, 1.00),
-                      fontSize: 20,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    border: const OutlineInputBorder()),
+              SizedBox(
+                width: 350,
+                height: 45,
+                child: TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                      filled: true,
+                      fillColor: TextFieldBackground(),
+                      disabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Color.fromARGB(255, 61, 62, 65)),
+                          borderRadius: BorderRadius.all(Radius.circular(10))),
+                      enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Color.fromARGB(255, 61, 62, 65),
+                              width: 0.0),
+                          borderRadius: BorderRadius.all(Radius.circular(10))),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: highlight
+                                  ? Colors.red.shade900
+                                  : const Color.fromARGB(255, 61, 62, 65)),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(10))),
+                      labelText: "E.g Summer Trip",
+                      labelStyle: const TextStyle(
+                        color: Color.fromRGBO(48, 55, 72, 1.00),
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      border: const OutlineInputBorder()),
+                ),
               ),
               const SizedBox(width: 100, height: 20),
               Text(
                 "Origin",
                 style: LabelTextStyle(),
               ),
-              TextField(
-                controller: originController,
-                decoration: InputDecoration(
-                    filled: true,
-                    fillColor: TextFieldBackground(),
-                    disabledBorder: const OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: Color.fromARGB(255, 61, 62, 65)),
-                        borderRadius: BorderRadius.all(Radius.circular(10))),
-                    enabledBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Color.fromARGB(255, 61, 62, 65), width: 0.0),
-                        borderRadius: BorderRadius.all(Radius.circular(10))),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: highlight
-                                ? Colors.red.shade900
-                                : const Color.fromARGB(255, 61, 62, 65)),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(10))),
-                    labelText: "E.g Isb, Lahore",
-                    labelStyle: const TextStyle(
-                      color: Color.fromRGBO(48, 55, 72, 1.00),
-                      fontSize: 20,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    border: const OutlineInputBorder()),
+              SizedBox(
+                width: 350,
+                height: 45,
+                child: TextField(
+                  controller: originController,
+                  decoration: InputDecoration(
+                      filled: true,
+                      fillColor: TextFieldBackground(),
+                      disabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Color.fromARGB(255, 61, 62, 65)),
+                          borderRadius: BorderRadius.all(Radius.circular(10))),
+                      enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Color.fromARGB(255, 61, 62, 65),
+                              width: 0.0),
+                          borderRadius: BorderRadius.all(Radius.circular(10))),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: highlight
+                                  ? Colors.red.shade900
+                                  : const Color.fromARGB(255, 61, 62, 65)),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(10))),
+                      labelText: "E.g Isb, Lahore",
+                      labelStyle: const TextStyle(
+                        color: Color.fromRGBO(48, 55, 72, 1.00),
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      border: const OutlineInputBorder()),
+                ),
               ),
               const SizedBox(width: 100, height: 20),
               Text(
                 "Destination",
                 style: LabelTextStyle(),
               ),
-              TextField(
-                controller: destController,
-                decoration: tripTextfielddecor("E.g Islamabad, Lahore"),
+              SizedBox(
+                width: 350,
+                height: 45,
+                child: TextField(
+                  controller: destController,
+                  decoration: tripTextfielddecor("E.g Islamabad, Lahore"),
+                ),
               ),
               const SizedBox(width: 100, height: 20),
               Text(
                 "Add a Stop",
                 style: LabelTextStyle(),
               ),
-              TextField(
-                controller: stopsController,
-                decoration: tripTextfielddecor("E.g Lunch at abc.."),
+              SizedBox(
+                width: 350,
+                height: 45,
+                child: TextField(
+                  controller: stopsController,
+                  decoration: tripTextfielddecor("E.g Lunch at abc.."),
+                ),
               ),
               const SizedBox(width: 100, height: 20),
               Text(
                 "Select Departure Date",
                 style: LabelTextStyle(),
               ),
-              ElevatedButton(
-                  style: buttonStyle(),
-                  onPressed: () async {
-                    DateTime? datePicker = await showDatePicker(
-                        context: context,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2025),
-                        initialDate: DateTime.now());
-                    setState(() {
-                      date = formatDate(datePicker.toString());
-                    });
-                  },
-                  child: const Text(
-                    "Select Date",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold),
-                  )),
+              date != ""
+                  ? SizedBox(
+                      width: 350,
+                      height: 45,
+                      child: TextFormField(
+                        decoration: InputDecoration(
+                            filled: true,
+                            fillColor: TextFieldBackground(),
+                            disabledBorder: const OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Color.fromARGB(255, 61, 62, 65)),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(10))),
+                            enabledBorder: const OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Color.fromARGB(255, 61, 62, 65),
+                                    width: 0.0),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(10))),
+                            focusedBorder: const OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Color.fromARGB(255, 61, 62, 65)),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(10))),
+                            labelText: date,
+                            labelStyle: const TextStyle(
+                              color: Color.fromRGBO(48, 55, 72, 1.00),
+                              fontSize: 14,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            suffixIcon: IconButton(
+                              iconSize: 35,
+                              icon: const Icon(Icons.calendar_month_rounded,
+                                  color: Color.fromARGB(255, 20, 1, 1)),
+                              onPressed: () async {
+                                DateTime? datePicker = await showDatePicker(
+                                    context: context,
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime(2025),
+                                    initialDate: DateTime.now());
+                                setState(() {
+                                  date = formatDate(datePicker.toString());
+                                });
+                              },
+                            ),
+                            border: const OutlineInputBorder()),
+                        style: const TextStyle(
+                          fontSize:
+                              20, // Set the fontSize to match that of the button
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : ElevatedButton(
+                      style: buttonStyle(),
+                      onPressed: () async {
+                        DateTime? datePicker = await showDatePicker(
+                            context: context,
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2025),
+                            initialDate: DateTime.now());
+                        setState(() {
+                          date = formatDate(datePicker.toString());
+                        });
+                      },
+                      child: const Text(
+                        "Select Date",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold),
+                      )),
               const SizedBox(width: 100, height: 20),
               TextButton.icon(
                   onPressed: () {
@@ -357,7 +428,7 @@ class _newTrip extends State<NewTrip> {
                 style: TextStyle(
                   color: AppBarBackground(),
                   overflow: TextOverflow.visible,
-                  fontSize: 18,
+                  fontSize: 14,
                 ),
               ),
               AnimatedOpacity(

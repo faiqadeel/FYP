@@ -13,7 +13,7 @@ TextField textFieldComponent(String text, String path) {
 
 ButtonStyle buttonStyle() {
   return ButtonStyle(
-    fixedSize: MaterialStateProperty.all<Size>(const Size(455, 50.0)),
+    fixedSize: MaterialStateProperty.all<Size>(const Size(350, 50.0)),
     backgroundColor: MaterialStateProperty.all<Color>(button1()),
     shape: MaterialStateProperty.all<OutlinedBorder>(
       RoundedRectangleBorder(
@@ -28,7 +28,7 @@ ButtonStyle buttonStyle() {
 
 TextStyle buttonTextStyle() {
   return const TextStyle(
-      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22);
+      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 19);
 }
 
 TextStyle AppBarTextStyle() {
@@ -36,7 +36,7 @@ TextStyle AppBarTextStyle() {
 }
 
 TextStyle LabelTextStyle() => const TextStyle(
-    fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black);
+    fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black);
 
 InputDecoration textFieldDecoration(String path, String text) {
   return InputDecoration(
@@ -95,7 +95,7 @@ InputDecoration tripTextfielddecor(String text) {
       labelText: text,
       labelStyle: const TextStyle(
         color: Color.fromRGBO(48, 55, 72, 1.00),
-        fontSize: 20,
+        fontSize: 14,
         fontStyle: FontStyle.italic,
       ),
       border: const OutlineInputBorder());
